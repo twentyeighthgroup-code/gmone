@@ -4,242 +4,483 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>GmOne AI</title>
-    <!-- Подключаем скрипт Telegram Mini Apps -->
+    <!-- Telegram Web App API -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <!-- Подключаем библиотеку для красивого текста (Markdown) -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
-        /* Стили адаптированы под цвета Telegram */
+        :root {
+            --bg-color: var(--tg-theme-bg-color, #ffffff);
+            --secondary-bg: var(--tg-theme-secondary-bg-color, #f1f1f1);
+            --text-color: var(--tg-theme-text-color, #000000);
+            --hint-color: var(--tg-theme-hint-color, #999999);
+            --button-color: var(--tg-theme-button-color, #3390ec);
+            --button-text: var(--tg-theme-button-text-color, #ffffff);
+        }
+
         body {
-            font-family: Arial, sans-serif;
-            background-color: var(--tg-theme-bg-color, #ffffff);
-            color: var(--tg-theme-text-color, #000000);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
             margin: 0;
             padding: 0;
             display: flex;
             flex-direction: column;
             height: 100vh;
+            overflow: hidden;
         }
+
+        /* Шапка */
         .header {
-            background-color: var(--tg-theme-secondary-bg-color, #f1f1f1);
-            padding: 15px;
-            text-align: center;
-            font-weight: bold;
-            font-size: 18px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            background-color: var(--secondary-bg);
+            padding: 12px 20px;
             display: flex;
-            justify-content: space-between;
             align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 1px 10px rgba(0,0,0,0.05);
+            z-index: 10;
         }
-        .clear-btn {
-            background: none;
-            border: none;
-            color: var(--tg-theme-button-color, #3390ec);
-            font-size: 14px;
-            cursor: pointer;
-        }
-        .chat-container {
-            flex: 1;
-            padding: 15px;
-            overflow-y: auto;
+
+        .header-info {
             display: flex;
-            flex-direction: column;
+            align-items: center;
             gap: 10px;
         }
-        .message {
-            max-width: 80%;
-            padding: 10px 15px;
-            border-radius: 15px;
-            line-height: 1.4;
-            word-wrap: break-word;
-        }
-        .message.bot {
-            background-color: var(--tg-theme-secondary-bg-color, #f1f1f1);
-            align-self: flex-start;
-            border-bottom-left-radius: 5px;
-        }
-        .message.user {
-            background-color: var(--tg-theme-button-color, #3390ec);
-            color: var(--tg-theme-button-text-color, #ffffff);
-            align-self: flex-end;
-            border-bottom-right-radius: 5px;
-        }
-        .input-container {
-            display: flex;
-            padding: 10px;
-            background-color: var(--tg-theme-bg-color, #ffffff);
-            border-top: 1px solid var(--tg-theme-secondary-bg-color, #e0e0e0);
-        }
-        input[type="text"] {
-            flex: 1;
-            padding: 12px;
-            border: 1px solid var(--tg-theme-secondary-bg-color, #ccc);
-            border-radius: 20px;
-            background-color: var(--tg-theme-bg-color, #ffffff);
-            color: var(--tg-theme-text-color, #000000);
-            outline: none;
-        }
-        button.send-btn {
-            background-color: var(--tg-theme-button-color, #3390ec);
-            color: var(--tg-theme-button-text-color, #ffffff);
-            border: none;
+
+        .bot-avatar {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #3390ec, #1c73c4);
             border-radius: 50%;
-            width: 42px;
-            height: 42px;
-            margin-left: 10px;
-            cursor: pointer;
-            font-size: 18px;
             display: flex;
             align-items: center;
             justify-content: center;
+            font-size: 20px;
+            box-shadow: 0 2px 5px rgba(51, 144, 236, 0.3);
         }
+
+        .header-text h1 {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .header-text p {
+            margin: 0;
+            font-size: 12px;
+            color: var(--button-color);
+            font-weight: 500;
+        }
+
+        .clear-btn {
+            background: none;
+            border: none;
+            color: var(--hint-color);
+            font-size: 20px;
+            cursor: pointer;
+            padding: 5px;
+        }
+
+        /* Чат */
+        .chat-container {
+            flex: 1;
+            padding: 20px 15px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            scroll-behavior: smooth;
+        }
+
+        /* Анимация появления сообщений */
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message-wrapper {
+            display: flex;
+            gap: 10px;
+            animation: slideIn 0.3s ease-out forwards;
+        }
+
+        .message-wrapper.user {
+            flex-direction: row-reverse;
+        }
+
+        .avatar-small {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        .avatar-user { background-color: var(--secondary-bg); }
+        .avatar-bot { background: linear-gradient(135deg, #3390ec, #1c73c4); color: white; }
+
+        .message {
+            max-width: 75%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            line-height: 1.5;
+            font-size: 15px;
+            word-wrap: break-word;
+        }
+
+        .message.bot {
+            background-color: var(--secondary-bg);
+            border-bottom-left-radius: 4px;
+        }
+
+        .message.user {
+            background-color: var(--button-color);
+            color: var(--button-text);
+            border-bottom-right-radius: 4px;
+            box-shadow: 0 2px 5px rgba(51, 144, 236, 0.2);
+        }
+
+        /* Форматирование Markdown внутри сообщений */
+        .message p { margin: 0 0 8px 0; }
+        .message p:last-child { margin: 0; }
+        .message strong { font-weight: 600; }
+        .message ul { margin: 5px 0; padding-left: 20px; }
+
+        /* Индикатор печатания */
+        .typing-indicator {
+            display: flex;
+            gap: 4px;
+            padding: 5px 0;
+        }
+        .dot {
+            width: 6px;
+            height: 6px;
+            background-color: var(--hint-color);
+            border-radius: 50%;
+            animation: bounce 1.4s infinite ease-in-out both;
+        }
+        .dot:nth-child(1) { animation-delay: -0.32s; }
+        .dot:nth-child(2) { animation-delay: -0.16s; }
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+
+        /* Быстрые действия (Chips) */
+        .quick-actions {
+            display: flex;
+            gap: 10px;
+            padding: 10px 15px;
+            overflow-x: auto;
+            background-color: var(--bg-color);
+            border-top: 1px solid var(--secondary-bg);
+            scrollbar-width: none;
+        }
+        .quick-actions::-webkit-scrollbar { display: none; }
+        
+        .chip {
+            background-color: var(--secondary-bg);
+            color: var(--button-color);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 500;
+            white-space: nowrap;
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition: 0.2s;
+        }
+        .chip:active { background-color: var(--button-color); color: var(--button-text); }
+
+        /* Поле ввода */
+        .input-container {
+            display: flex;
+            padding: 10px 15px 20px 15px;
+            background-color: var(--bg-color);
+            align-items: flex-end;
+            gap: 10px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 14px 20px;
+            border: 1px solid var(--secondary-bg);
+            border-radius: 24px;
+            background-color: var(--secondary-bg);
+            color: var(--text-color);
+            font-size: 16px;
+            outline: none;
+            transition: border 0.2s;
+        }
+        input[type="text"]:focus {
+            border-color: var(--button-color);
+        }
+
+        button.send-btn {
+            background-color: var(--button-color);
+            color: var(--button-text);
+            border: none;
+            border-radius: 50%;
+            width: 48px;
+            height: 48px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.1s;
+            box-shadow: 0 2px 10px rgba(51, 144, 236, 0.3);
+        }
+        button.send-btn:active { transform: scale(0.95); }
+        button.send-btn svg { width: 20px; height: 20px; fill: currentColor; margin-left: 2px;}
+
     </style>
 </head>
 <body>
 
     <div class="header">
-        <span id="header-title">GmOne от Tegcompany</span>
-        <button class="clear-btn" onclick="clearChat()">Очистить</button>
+        <div class="header-info">
+            <div class="bot-avatar">🤖</div>
+            <div class="header-text">
+                <h1>GmOne</h1>
+                <p>● online</p>
+            </div>
+        </div>
+        <button class="clear-btn" onclick="clearChat()">🗑</button>
     </div>
 
     <div class="chat-container" id="chat">
-        <!-- Сообщения будут тут -->
+        <!-- Сообщения -->
+    </div>
+
+    <!-- Быстрые кнопки -->
+    <div class="quick-actions" id="quickActions">
+        <div class="chip" onclick="sendQuick('Погода в Москве')">🌤 Погода</div>
+        <div class="chip" onclick="sendQuick('Курс крипты')">💰 Крипта</div>
+        <div class="chip" onclick="sendQuick('Что такое искусственный интеллект?')">🧠 Википедия</div>
+        <div class="chip" onclick="sendQuick('Расскажи факт')">💡 Факт</div>
+        <div class="chip" onclick="sendQuick('Сыграем в камень ножницы бумага')">🎲 Игра</div>
     </div>
 
     <div class="input-container">
-        <input type="text" id="userInput" placeholder="Напиши сообщение..." onkeypress="handleKeyPress(event)">
-        <button class="send-btn" onclick="sendMessage()">➤</button>
+        <input type="text" id="userInput" placeholder="Спроси меня о чем-нибудь..." onkeypress="handleKeyPress(event)" autocomplete="off">
+        <button class="send-btn" onclick="sendMessage()">
+            <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+        </button>
     </div>
 
     <script>
-        // Инициализация Telegram
         const tg = window.Telegram.WebApp;
-        tg.expand(); // Расширяем на весь экран
+        tg.expand(); 
         
         const userName = tg.initDataUnsafe?.user?.first_name || "друг";
         const company = "Tegcompany";
 
-        // База знаний бота (перенесена из Python)
+        // Настраиваем Markdown (чтобы не парсил HTML теги ради безопасности)
+        marked.setOptions({ sanitize: true });
+
         const botData = {
-            greetings: [`Привет, ${userName}! Чем помогу от ${company}?`, `Здравствуй! ${company} на связи. Что нужно?`, `Йо! Готов помочь от ${company}. 😄`],
-            jokes: ["Почему программисты путают Хэллоуин и Рождество? Oct 31 = Dec 25! 😄", "ИИ без кофе — как код без багов: миф! ☕", "Как программист ловит рыбу? Сетью! 🐟"],
-            facts: ["Медузы бессмертны! 🌊", "Земля вращается 1600 км/ч. Держись! 🌍", "Мёд никогда не портится. 🐝", "Осьминоги имеют три сердца. ❤️❤️❤️"],
-            advices: ["Pomodoro: 25 мин работы!", "Будь позитивным!", "Сделай перерыв и выпей воды!"],
-            motivations: [`«Успех — это сумма маленьких усилий.» Вперёд с ${company}!`, `Ты сильнее, чем думаешь! — Мотивирует ${company}. 😊`, `Каждый день — новый шанс. 🚀`],
+            greetings: [`Привет, **${userName}**! Рад видеть тебя. Я GmOne от *${company}*. Чем могу помочь сегодня?`, `Здравствуй! Я на связи. Что интересует?`],
+            facts: ["Медузы биологически **бессмертны**! 🌊", "Осьминоги имеют **три сердца**. ❤️❤️❤️", "На Юпитере и Сатурне идут дожди из **алмазов**. 💎"],
         };
 
         function getRandom(arr) {
             return arr[Math.floor(Math.random() * arr.length)];
         }
 
-        // Логика ответов ИИ
-        async function getBotResponse(text) {
-            let msg = text.toLowerCase();
+        // --- УМНЫЕ ФУНКЦИИ (API) ---
 
-            if (msg.includes("привет")) return getRandom(botData.greetings);
-            if (msg.includes("пока")) return `До встречи! С ${company} было круто. 🚀`;
-            if (msg.includes("шутка")) return getRandom(botData.jokes);
-            if (msg.includes("факт")) return getRandom(botData.facts);
-            if (msg.includes("совет")) return `Совет от ${company}: ${getRandom(botData.advices)}`;
-            if (msg.includes("мотивируй")) return getRandom(botData.motivations);
-            
-            // Игра камень ножницы бумага
-            if (msg.includes("камень") || msg.includes("ножницы") || msg.includes("бумага")) {
-                const choices = ["камень", "ножницы", "бумага"];
-                const botChoice = getRandom(choices);
-                return `Я выбрал: ${botChoice}. Сыграем еще? 🎲`;
+        // 1. Погода (Реальная через OpenMeteo)
+        async function getWeather(city) {
+            try {
+                let geoRes = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=ru`);
+                let geoData = await geoRes.json();
+                if (!geoData.results) return `Не смог найти город "${city}". Уточни название.`;
+                
+                let lat = geoData.results[0].latitude;
+                let lon = geoData.results[0].longitude;
+                let cityName = geoData.results[0].name;
+
+                let weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`);
+                let weatherData = await weatherRes.json();
+                let temp = weatherData.current_weather.temperature;
+                let wind = weatherData.current_weather.windspeed;
+
+                return `🌤 **Погода в ${cityName} сейчас:**\n• Температура: **${temp}°C**\n• Ветер: **${wind} км/ч**\n\n*Данные предоставлены ${company}*`;
+            } catch (e) {
+                return "Ошибка при запросе погоды. Сервер недоступен 😔";
             }
-
-            // Калькулятор (безопасный eval)
-            if (msg.match(/^[0-9+\-*/().\s]+$/) && msg.trim().length > 2) {
-                try {
-                    return `Результат: ${eval(msg)}`;
-                } catch (e) {
-                    return "Ошибка в выражении.";
-                }
-            }
-
-            // Поиск по Википедии (Замена DuckDuckGo)
-            if (msg.includes("что такое") || msg.includes("кто такой")) {
-                let query = msg.replace("что такое", "").replace("кто такой", "").trim();
-                try {
-                    let response = await fetch(`https://ru.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`);
-                    let data = await response.json();
-                    if (data.extract) {
-                        return `${data.extract} (Поиск от ${company} 🔍)`;
-                    }
-                } catch (e) {
-                    console.log("Wiki error:", e);
-                }
-            }
-
-            return "Не понял, уточни! Попробуй попросить шутку, факт, мотивацию или спроси 'что такое [слово]'. 🤔";
         }
 
-        // UI Функции
+        // 2. Крипта (Реальная через CoinGecko)
+        async function getCrypto() {
+            try {
+                let res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,the-open-network&vs_currencies=usd');
+                let data = await res.json();
+                return `💰 **Текущие курсы криптовалют:**\n\n• **Bitcoin (BTC):** $${data.bitcoin.usd.toLocaleString()}\n• **Ethereum (ETH):** $${data.ethereum.usd.toLocaleString()}\n• **TON Coin:** $${data['the-open-network'].usd}\n\n*Заряжено ${company} 🚀*`;
+            } catch (e) {
+                return "Не смог получить курс криптовалют. Попробуй позже!";
+            }
+        }
+
+        // 3. Википедия
+        async function getWiki(query) {
+            try {
+                let res = await fetch(`https://ru.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`);
+                let data = await res.json();
+                if (data.extract) return `📚 **${data.title}**\n${data.extract}\n\n*[Читать подробнее](${data.content_urls.desktop.page})*`;
+                return "Ничего не нашел в Википедии по этому запросу 🤔";
+            } catch (e) {
+                return "Ошибка поиска. Попробуй переформулировать.";
+            }
+        }
+
+        // ОСНОВНАЯ ЛОГИКА ОТВЕТОВ
+        async function getBotResponse(text) {
+            let msg = text.toLowerCase().trim();
+
+            if (msg.includes("привет") || msg === "старт" || msg === "/start") return getRandom(botData.greetings);
+            if (msg.includes("факт")) return getRandom(botData.facts);
+            if (msg.includes("крипт") || msg.includes("биткоин")) return await getCrypto();
+
+            // Парсер погоды (ищет слово после "в " или "город ")
+            if (msg.includes("погода")) {
+                let city = "Москве"; // по умолчанию
+                let match = msg.match(/(?:в|городе)\s+([а-яА-Яa-zA-Z-]+)/);
+                if (match) city = match[1];
+                return await getWeather(city);
+            }
+
+            // Парсер Википедии
+            if (msg.includes("что такое") || msg.includes("кто так") || msg.includes("расскажи про")) {
+                let query = msg.replace(/что такое|кто такой|кто такая|кто такие|расскажи про/g, "").trim();
+                return await getWiki(query);
+            }
+
+            // Калькулятор (Безопасный математический парсер)
+            if (/^[0-9+\-*/().\s]+$/.test(msg) && msg.length > 2) {
+                try {
+                    let calc = new Function('return ' + msg)();
+                    return `🧮 Результат: **${calc}**`;
+                } catch { /* игнорируем ошибку и идем дальше */ }
+            }
+
+            // Камень ножницы бумага
+            if (msg.includes("камень") || msg.includes("ножницы") || msg.includes("бумага")) {
+                const choices = ["Камень 🪨", "Ножницы ✂️", "Бумага 📄"];
+                return `Я выбрал: **${getRandom(choices)}**. Кто победил? 🎲`;
+            }
+
+            return "Я еще учусь! Попробуй спросить меня: **Погода в Лондоне**, **Курс крипты**, **Что такое нейросеть** или просто **напиши математический пример**. 🤖";
+        }
+
+        // --- УПРАВЛЕНИЕ ИНТЕРФЕЙСОМ ---
         const chat = document.getElementById('chat');
         const input = document.getElementById('userInput');
-
-        // Загрузка истории из памяти телефона (вместо SQLite)
-        let history = JSON.parse(localStorage.getItem('chatHistory')) || [];
+        let history = JSON.parse(localStorage.getItem('gmone_history')) || [];
 
         function renderHistory() {
             chat.innerHTML = '';
             if (history.length === 0) {
-                appendMessage(`Привет, ${userName}! Я GmOne от ${company}. Чем могу помочь?`, 'bot', false);
+                appendMessage(botData.greetings[0], 'bot', false);
             } else {
-                history.forEach(h => appendMessage(h.text, h.sender, false));
+                history.forEach(h => appendMessage(h.text, h.sender, false, true));
             }
         }
 
-        function appendMessage(text, sender, save = true) {
-            const div = document.createElement('div');
-            div.className = `message ${sender}`;
-            div.textContent = text;
-            chat.appendChild(div);
-            chat.scrollTop = chat.scrollHeight;
+        function appendMessage(text, sender, save = true, noAnim = false) {
+            const wrapper = document.createElement('div');
+            wrapper.className = `message-wrapper ${sender}`;
+            if (noAnim) wrapper.style.animation = 'none'; // Отключаем анимацию для истории
+
+            const avatar = document.createElement('div');
+            avatar.className = `avatar-small ${sender === 'bot' ? 'avatar-bot' : 'avatar-user'}`;
+            avatar.textContent = sender === 'bot' ? '🤖' : userName.charAt(0).toUpperCase();
+
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `message ${sender}`;
+            
+            // Если бот - рендерим Markdown, если юзер - просто текст
+            msgDiv.innerHTML = sender === 'bot' ? marked.parse(text) : text;
+
+            wrapper.appendChild(avatar);
+            wrapper.appendChild(msgDiv);
+            chat.appendChild(wrapper);
+            
+            // Плавный скролл вниз
+            setTimeout(() => chat.scrollTop = chat.scrollHeight, 50);
 
             if (save) {
                 history.push({ text, sender });
-                // Храним только последние 20 сообщений
-                if (history.length > 20) history.shift();
-                localStorage.setItem('chatHistory', JSON.stringify(history));
+                if (history.length > 30) history.shift(); // Храним 30 сообщений
+                localStorage.setItem('gmone_history', JSON.stringify(history));
             }
         }
 
-        async function sendMessage() {
-            const text = input.value.trim();
+        function showTyping() {
+            const wrapper = document.createElement('div');
+            wrapper.className = `message-wrapper bot`;
+            wrapper.id = 'typingIndicator';
+            
+            const avatar = document.createElement('div');
+            avatar.className = `avatar-small avatar-bot`;
+            avatar.textContent = '🤖';
+
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `message bot typing-indicator`;
+            msgDiv.innerHTML = '<div class="dot"></div><div class="dot"></div><div class="dot"></div>';
+
+            wrapper.appendChild(avatar);
+            wrapper.appendChild(msgDiv);
+            chat.appendChild(wrapper);
+            chat.scrollTop = chat.scrollHeight;
+        }
+
+        function hideTyping() {
+            const typing = document.getElementById('typingIndicator');
+            if (typing) typing.remove();
+        }
+
+        async function sendMessage(textOverride = null) {
+            const text = textOverride || input.value.trim();
             if (!text) return;
 
-            appendMessage(text, 'user');
+            tg.HapticFeedback.impactOccurred('light'); // Вибрация
             input.value = '';
+            
+            appendMessage(text, 'user');
+            showTyping();
 
-            // Имитация "печатает..."
-            const typingDiv = document.createElement('div');
-            typingDiv.className = 'message bot';
-            typingDiv.textContent = '...';
-            chat.appendChild(typingDiv);
-            chat.scrollTop = chat.scrollHeight;
-
-            // Получаем ответ с небольшой задержкой
+            // Имитируем "обдумывание" от 0.5 до 1.5 секунд
+            const thinkingTime = Math.random() * 1000 + 500;
+            
             const response = await getBotResponse(text);
-            
-            chat.removeChild(typingDiv);
-            appendMessage(response, 'bot');
-            
-            // Вибрация телефона (Haptic feedback Телеграма)
-            tg.HapticFeedback.impactOccurred('light');
+
+            setTimeout(() => {
+                hideTyping();
+                appendMessage(response, 'bot');
+                tg.HapticFeedback.notificationOccurred('success');
+            }, thinkingTime);
         }
 
         function handleKeyPress(e) {
             if (e.key === 'Enter') sendMessage();
         }
 
+        function sendQuick(text) {
+            sendMessage(text);
+        }
+
         function clearChat() {
+            tg.HapticFeedback.impactOccurred('medium');
             history = [];
-            localStorage.removeItem('chatHistory');
+            localStorage.removeItem('gmone_history');
             renderHistory();
         }
 
-        // Запуск
+        // Инициализация
         renderHistory();
     </script>
 </body>
