@@ -3,20 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GmOne AI</title>
-    <!-- Telegram Web App API -->
+    <title>GmOne</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <!-- Подключаем библиотеку для красивого текста (Markdown) -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
         :root {
             --bg-color: var(--tg-theme-bg-color, #ffffff);
-            --secondary-bg: var(--tg-theme-secondary-bg-color, #f1f1f1);
+            --secondary-bg: var(--tg-theme-secondary-bg-color, #f0f0f0);
             --text-color: var(--tg-theme-text-color, #000000);
-            --hint-color: var(--tg-theme-hint-color, #999999);
-            --button-color: var(--tg-theme-button-color, #3390ec);
+            --hint-color: var(--tg-theme-hint-color, #888888);
+            --button-color: var(--tg-theme-button-color, #007aff);
             --button-text: var(--tg-theme-button-text-color, #ffffff);
+            --nav-height: 65px;
         }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -30,457 +31,346 @@
             overflow: hidden;
         }
 
-        /* Шапка */
+        /* Верхняя панель */
         .header {
             background-color: var(--secondary-bg);
             padding: 12px 20px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            box-shadow: 0 1px 10px rgba(0,0,0,0.05);
-            z-index: 10;
-        }
-
-        .header-info {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .bot-avatar {
-            width: 40px;
-            height: 40px;
-            background: linear-gradient(135deg, #3390ec, #1c73c4);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-            box-shadow: 0 2px 5px rgba(51, 144, 236, 0.3);
-        }
-
-        .header-text h1 {
-            margin: 0;
-            font-size: 16px;
             font-weight: 600;
+            font-size: 17px;
+            z-index: 10;
+            border-bottom: 1px solid rgba(128, 128, 128, 0.1);
         }
 
-        .header-text p {
-            margin: 0;
-            font-size: 12px;
-            color: var(--button-color);
-            font-weight: 500;
-        }
-
-        .clear-btn {
-            background: none;
-            border: none;
-            color: var(--hint-color);
-            font-size: 20px;
-            cursor: pointer;
-            padding: 5px;
-        }
-
-        /* Чат */
-        .chat-container {
+        /* Контейнеры экранов */
+        .screen {
             flex: 1;
-            padding: 20px 15px;
-            overflow-y: auto;
-            display: flex;
+            display: none;
             flex-direction: column;
-            gap: 15px;
-            scroll-behavior: smooth;
+            overflow-y: auto;
+            padding-bottom: var(--nav-height);
+            animation: fadeIn 0.2s ease-in-out;
         }
+        .screen.active { display: flex; }
 
-        /* Анимация появления сообщений */
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        .message-wrapper {
-            display: flex;
-            gap: 10px;
-            animation: slideIn 0.3s ease-out forwards;
-        }
+        /* --- ЧАТ --- */
+        .chat-area { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+        
+        .message-wrapper { display: flex; gap: 10px; animation: slideUp 0.3s cubic-bezier(0.25, 1, 0.5, 1) forwards; opacity: 0; transform: translateY(10px); }
+        .message-wrapper.user { flex-direction: row-reverse; }
+        @keyframes slideUp { to { opacity: 1; transform: translateY(0); } }
 
-        .message-wrapper.user {
-            flex-direction: row-reverse;
-        }
+        .avatar { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
+        .avatar-bot { background: linear-gradient(135deg, #007aff, #00c6ff); color: white; box-shadow: 0 2px 8px rgba(0, 122, 255, 0.3); }
+        .avatar-user { background-color: var(--secondary-bg); color: var(--text-color); }
 
-        .avatar-small {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 16px;
-            flex-shrink: 0;
-        }
-
-        .avatar-user { background-color: var(--secondary-bg); }
-        .avatar-bot { background: linear-gradient(135deg, #3390ec, #1c73c4); color: white; }
-
-        .message {
-            max-width: 75%;
-            padding: 12px 16px;
-            border-radius: 18px;
-            line-height: 1.5;
-            font-size: 15px;
-            word-wrap: break-word;
-        }
-
-        .message.bot {
-            background-color: var(--secondary-bg);
-            border-bottom-left-radius: 4px;
-        }
-
-        .message.user {
-            background-color: var(--button-color);
-            color: var(--button-text);
-            border-bottom-right-radius: 4px;
-            box-shadow: 0 2px 5px rgba(51, 144, 236, 0.2);
-        }
-
-        /* Форматирование Markdown внутри сообщений */
-        .message p { margin: 0 0 8px 0; }
+        .message { max-width: 75%; padding: 10px 14px; border-radius: 18px; line-height: 1.4; font-size: 15px; word-wrap: break-word; }
+        .message.bot { background-color: var(--secondary-bg); border-bottom-left-radius: 4px; }
+        .message.user { background-color: var(--button-color); color: var(--button-text); border-bottom-right-radius: 4px; }
+        
+        .message p { margin: 0 0 5px 0; }
         .message p:last-child { margin: 0; }
-        .message strong { font-weight: 600; }
-        .message ul { margin: 5px 0; padding-left: 20px; }
+        .message a { color: var(--button-color); text-decoration: none; }
 
-        /* Индикатор печатания */
-        .typing-indicator {
-            display: flex;
-            gap: 4px;
-            padding: 5px 0;
-        }
-        .dot {
-            width: 6px;
-            height: 6px;
-            background-color: var(--hint-color);
-            border-radius: 50%;
-            animation: bounce 1.4s infinite ease-in-out both;
-        }
+        /* Индикатор печати */
+        .typing { display: flex; gap: 4px; padding: 5px 0; }
+        .dot { width: 6px; height: 6px; background-color: var(--hint-color); border-radius: 50%; animation: bounce 1.4s infinite ease-in-out both; }
         .dot:nth-child(1) { animation-delay: -0.32s; }
         .dot:nth-child(2) { animation-delay: -0.16s; }
-        @keyframes bounce {
-            0%, 80%, 100% { transform: scale(0); }
-            40% { transform: scale(1); }
-        }
-
-        /* Быстрые действия (Chips) */
-        .quick-actions {
-            display: flex;
-            gap: 10px;
-            padding: 10px 15px;
-            overflow-x: auto;
-            background-color: var(--bg-color);
-            border-top: 1px solid var(--secondary-bg);
-            scrollbar-width: none;
-        }
-        .quick-actions::-webkit-scrollbar { display: none; }
-        
-        .chip {
-            background-color: var(--secondary-bg);
-            color: var(--button-color);
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 13px;
-            font-weight: 500;
-            white-space: nowrap;
-            cursor: pointer;
-            border: 1px solid transparent;
-            transition: 0.2s;
-        }
-        .chip:active { background-color: var(--button-color); color: var(--button-text); }
+        @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
 
         /* Поле ввода */
-        .input-container {
-            display: flex;
-            padding: 10px 15px 20px 15px;
-            background-color: var(--bg-color);
-            align-items: flex-end;
-            gap: 10px;
-        }
+        .input-area { padding: 10px 15px 15px; background-color: var(--bg-color); display: flex; gap: 10px; align-items: flex-end; border-top: 1px solid rgba(128, 128, 128, 0.1); position: fixed; bottom: var(--nav-height); width: 100%; z-index: 10; }
+        input[type="text"] { flex: 1; padding: 12px 18px; border: 1px solid var(--secondary-bg); border-radius: 20px; background-color: var(--secondary-bg); color: var(--text-color); font-size: 16px; outline: none; }
+        .send-btn { background-color: var(--button-color); color: var(--button-text); border: none; border-radius: 50%; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        .send-btn svg { width: 20px; fill: currentColor; transform: translateX(2px); }
 
-        input[type="text"] {
-            flex: 1;
-            padding: 14px 20px;
-            border: 1px solid var(--secondary-bg);
-            border-radius: 24px;
-            background-color: var(--secondary-bg);
-            color: var(--text-color);
-            font-size: 16px;
-            outline: none;
-            transition: border 0.2s;
-        }
-        input[type="text"]:focus {
-            border-color: var(--button-color);
-        }
+        /* --- НАВЫКИ И О НАС --- */
+        .page-content { padding: 20px; }
+        .page-title { font-size: 24px; font-weight: bold; margin-bottom: 20px; }
+        
+        .skill-card { background-color: var(--secondary-bg); padding: 15px; border-radius: 12px; margin-bottom: 15px; cursor: pointer; transition: 0.2s; }
+        .skill-card:active { transform: scale(0.98); opacity: 0.8; }
+        .skill-title { font-weight: bold; font-size: 16px; margin-bottom: 5px; color: var(--button-color); }
+        .skill-desc { font-size: 14px; color: var(--hint-color); }
 
-        button.send-btn {
-            background-color: var(--button-color);
-            color: var(--button-text);
-            border: none;
-            border-radius: 50%;
-            width: 48px;
-            height: 48px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: transform 0.1s;
-            box-shadow: 0 2px 10px rgba(51, 144, 236, 0.3);
-        }
-        button.send-btn:active { transform: scale(0.95); }
-        button.send-btn svg { width: 20px; height: 20px; fill: currentColor; margin-left: 2px;}
+        .about-card { background-color: var(--secondary-bg); padding: 20px; border-radius: 16px; text-align: center; margin-bottom: 20px; }
+        .about-logo { font-size: 50px; margin-bottom: 10px; }
+        .about-card h2 { margin: 0 0 10px 0; font-size: 22px; }
+        .about-card p { font-size: 14px; color: var(--hint-color); line-height: 1.5; margin: 0; }
+        .dev-badge { display: inline-block; background-color: var(--button-color); color: var(--button-text); padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; margin-top: 15px; }
+
+        /* --- НИЖНЯЯ НАВИГАЦИЯ --- */
+        .bottom-nav { position: fixed; bottom: 0; width: 100%; height: var(--nav-height); background-color: var(--secondary-bg); display: flex; justify-content: space-around; align-items: center; border-top: 1px solid rgba(128, 128, 128, 0.1); z-index: 20; padding-bottom: env(safe-area-inset-bottom); }
+        .nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 33%; height: 100%; color: var(--hint-color); font-size: 11px; cursor: pointer; transition: 0.2s; }
+        .nav-item.active { color: var(--button-color); font-weight: 600; }
+        .nav-item svg { width: 24px; height: 24px; margin-bottom: 4px; fill: currentColor; }
 
     </style>
 </head>
 <body>
 
+    <!-- Шапка -->
     <div class="header">
-        <div class="header-info">
-            <div class="bot-avatar">🤖</div>
-            <div class="header-text">
-                <h1>GmOne</h1>
-                <p>● online</p>
+        <span id="header-title">GmOne</span>
+        <span style="font-size: 20px; cursor:pointer;" onclick="clearChat()">🗑</span>
+    </div>
+
+    <!-- ЭКРАН 1: ЧАТ -->
+    <div id="screen-chat" class="screen active">
+        <div class="chat-area" id="chat"></div>
+        <div class="input-area">
+            <input type="text" id="userInput" placeholder="Напиши сообщение..." onkeypress="handleKeyPress(event)" autocomplete="off">
+            <button class="send-btn" onclick="sendMessage()">
+                <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- ЭКРАН 2: НАВЫКИ -->
+    <div id="screen-skills" class="screen">
+        <div class="page-content">
+            <div class="page-title">Что я умею ⚡️</div>
+            
+            <div class="skill-card" onclick="useSkill('Погода в Москве')">
+                <div class="skill-title">🌤 Точная погода</div>
+                <div class="skill-desc">Напиши «Погода в [Город]», и я скажу актуальную температуру.</div>
+            </div>
+            
+            <div class="skill-card" onclick="useSkill('Что такое нейросеть?')">
+                <div class="skill-title">🧠 Энциклопедия</div>
+                <div class="skill-desc">Спроси «Что такое...» или «Кто такой...», я найду ответ.</div>
+            </div>
+
+            <div class="skill-card" onclick="useSkill('Курс крипты')">
+                <div class="skill-title">💰 Криптовалюты</div>
+                <div class="skill-desc">Напиши «Курс крипты», чтобы узнать цены BTC, ETH и TON.</div>
+            </div>
+
+            <div class="skill-card" onclick="useSkill('Который час?')">
+                <div class="skill-title">⏰ Время и дата</div>
+                <div class="skill-desc">Спроси «Который час?» или «Какое сегодня число?».</div>
+            </div>
+
+            <div class="skill-card" onclick="useSkill('2500 * 45 / 3')">
+                <div class="skill-title">🧮 Калькулятор</div>
+                <div class="skill-desc">Просто отправь мне любой математический пример.</div>
             </div>
         </div>
-        <button class="clear-btn" onclick="clearChat()">🗑</button>
     </div>
 
-    <div class="chat-container" id="chat">
-        <!-- Сообщения -->
+    <!-- ЭКРАН 3: О НАС -->
+    <div id="screen-about" class="screen">
+        <div class="page-content">
+            <div class="about-card">
+                <div class="about-logo">🤖</div>
+                <h2>GmOne</h2>
+                <p>Ваш личный интеллектуальный помощник прямо в Telegram. Разработан для быстрого поиска информации, расчетов и повседневных задач.</p>
+                <div class="dev-badge">v 2.0.0</div>
+            </div>
+
+            <div class="about-card" style="text-align: left;">
+                <h3 style="margin-top:0; font-size:18px;">🏢 Tegcompany</h3>
+                <p>Инновацион��ая ИТ-компания, основанная в Республике Беларусь.</p>
+                <br>
+                <p><strong>Основатель:</strong><br>Юркевич Артём Игоревич</p>
+                <br>
+                <p>С момента основания компания сосредоточилась на разработке ИИ-решений, начав с чат-ботов Tegych P и Beeprav P. GmOne — это новый шаг в развитии наших технологий.</p>
+            </div>
+        </div>
     </div>
 
-    <!-- Быстрые кнопки -->
-    <div class="quick-actions" id="quickActions">
-        <div class="chip" onclick="sendQuick('Погода в Москве')">🌤 Погода</div>
-        <div class="chip" onclick="sendQuick('Курс крипты')">💰 Крипта</div>
-        <div class="chip" onclick="sendQuick('Что такое искусственный интеллект?')">🧠 Википедия</div>
-        <div class="chip" onclick="sendQuick('Расскажи факт')">💡 Факт</div>
-        <div class="chip" onclick="sendQuick('Сыграем в камень ножницы бумага')">🎲 Игра</div>
-    </div>
-
-    <div class="input-container">
-        <input type="text" id="userInput" placeholder="Спроси меня о чем-нибудь..." onkeypress="handleKeyPress(event)" autocomplete="off">
-        <button class="send-btn" onclick="sendMessage()">
-            <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
-        </button>
+    <!-- НИЖНЯЯ НАВИГАЦИЯ -->
+    <div class="bottom-nav">
+        <div class="nav-item active" onclick="switchTab('chat', this)">
+            <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
+            <span>Чат</span>
+        </div>
+        <div class="nav-item" onclick="switchTab('skills', this)">
+            <svg viewBox="0 0 24 24"><path d="M13 2.05v3.03c3.39.49 6 3.39 6 6.92 0 .9-.22 1.75-.61 2.51l2.6 1.53c.64-1.24 1.01-2.66 1.01-4.04 0-4.74-3.46-8.68-8-9.95zM12 19c-3.87 0-7-3.13-7-7 0-3.53 2.61-6.43 6-6.92V2.05c-4.54 1.27-8 5.21-8 9.95 0 5.52 4.48 10 10 10 2.25 0 4.33-.74 6.01-2l-2.42-2.42c-1.03.88-2.27 1.42-3.59 1.42z"/></svg>
+            <span>Навыки</span>
+        </div>
+        <div class="nav-item" onclick="switchTab('about', this)">
+            <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+            <span>О нас</span>
+        </div>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
-        tg.expand(); 
+        tg.expand();
+        tg.ready();
         
         const userName = tg.initDataUnsafe?.user?.first_name || "друг";
-        const company = "Tegcompany";
-
-        // Настраиваем Markdown (чтобы не парсил HTML теги ради безопасности)
         marked.setOptions({ sanitize: true });
 
-        const botData = {
-            greetings: [`Привет, **${userName}**! Рад видеть тебя. Я GmOne от *${company}*. Чем могу помочь сегодня?`, `Здравствуй! Я на связи. Что интересует?`],
-            facts: ["Медузы биологически **бессмертны**! 🌊", "Осьминоги имеют **три сердца**. ❤️❤️❤️", "На Юпитере и Сатурне идут дожди из **алмазов**. 💎"],
+        // --- ЛОГИКА ИНТЕЛЛЕКТА (Мозг GmOne) ---
+        const Brain = {
+            async getWeather(city) {
+                try {
+                    let geo = await (await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=ru`)).json();
+                    if (!geo.results) return `Я не нашел город "${city}". Проверь название.`;
+                    let weather = await (await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${geo.results[0].latitude}&longitude=${geo.results[0].longitude}&current_weather=true`)).json();
+                    return `🌤 **${geo.results[0].name}:** Температура **${weather.current_weather.temperature}°C**, ветер ${weather.current_weather.windspeed} км/ч.`;
+                } catch (e) { return "Сервис погоды сейчас недоступен 😔"; }
+            },
+            async getCrypto() {
+                try {
+                    let data = await (await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,the-open-network&vs_currencies=usd')).json();
+                    return `💰 **Курс криптовалют:**\n• **BTC:** $${data.bitcoin.usd.toLocaleString()}\n• **ETH:** $${data.ethereum.usd.toLocaleString()}\n• **TON:** $${data['the-open-network'].usd}`;
+                } catch (e) { return "Не удалось загрузить курсы валют."; }
+            },
+            async getWiki(query) {
+                try {
+                    let data = await (await fetch(`https://ru.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`)).json();
+                    return data.extract ? `📚 **${data.title}**\n${data.extract}\n*[Читать подробнее](${data.content_urls.desktop.page})*` : "В Википедии нет точного ответа на это.";
+                } catch (e) { return "Не смог достучаться до энциклопедии."; }
+            },
+            getTime() {
+                const now = new Date();
+                return `⏰ Сейчас **${now.toLocaleTimeString('ru-RU', {hour: '2-digit', minute:'2-digit'})}**.\n📅 Дата: **${now.toLocaleDateString('ru-RU')}**`;
+            },
+            
+            async process(text) {
+                let msg = text.toLowerCase().trim();
+
+                // Приветствия
+                if (/^(привет|старт|\/start|здравствуй|хай|йо)/.test(msg)) {
+                    return `Привет, **${userName}**! Я GmOne — твой умный помощник. Спроси меня о чем-нибудь или загляни в�� вкладку "Навыки". 🚀`;
+                }
+
+                // Время и дата
+                if (/(время|часы|который час|число|дата|сегодня)/.test(msg)) return this.getTime();
+
+                // Погода (Ищет слово после "в " или "город ")
+                let weatherMatch = msg.match(/(?:погода\s+(?:в\s+)?|город\s+)([а-яА-Яa-zA-Z-]+)/);
+                if (weatherMatch || msg === 'погода') return await this.getWeather(weatherMatch ? weatherMatch[1] : 'Москве');
+
+                // Крипта
+                if (/(крипт|биткоин|курс|доллар)/.test(msg)) return await this.getCrypto();
+
+                // Энциклопедия (Вики)
+                let wikiMatch = msg.match(/(?:что такое|кто так(?:ой|ая|ие)|расскажи про)\s+(.+)/);
+                if (wikiMatch) return await this.getWiki(wikiMatch[1].replace('?', ''));
+
+                // Калькулятор (безопасный eval)
+                if (/^[0-9+\-*/().\s]+$/.test(msg) && msg.length > 2) {
+                    try { return `🧮 Ответ: **${new Function('return ' + msg)()}**`; } catch (e) {}
+                }
+
+                // Игры
+                if (/(камень|ножницы|бумага)/.test(msg)) {
+                    let c = ["Камень 🪨", "Ножницы ✂️", "Бумага 📄"];
+                    return `Я выбрал: **${c[Math.floor(Math.random()*c.length)]}**. Кто выиграл? 😎`;
+                }
+
+                // Дефолтный ответ
+                return "Хм, пока не знаю, что ответить. Попробуй спросить про погоду, крипту, посчитать пример или загляни в меню **Навыки**! 🤖";
+            }
         };
 
-        function getRandom(arr) {
-            return arr[Math.floor(Math.random() * arr.length)];
-        }
-
-        // --- УМНЫЕ ФУНКЦИИ (API) ---
-
-        // 1. Погода (Реальная через OpenMeteo)
-        async function getWeather(city) {
-            try {
-                let geoRes = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=ru`);
-                let geoData = await geoRes.json();
-                if (!geoData.results) return `Не смог найти город "${city}". Уточни название.`;
-                
-                let lat = geoData.results[0].latitude;
-                let lon = geoData.results[0].longitude;
-                let cityName = geoData.results[0].name;
-
-                let weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`);
-                let weatherData = await weatherRes.json();
-                let temp = weatherData.current_weather.temperature;
-                let wind = weatherData.current_weather.windspeed;
-
-                return `🌤 **Погода в ${cityName} сейчас:**\n• Температура: **${temp}°C**\n• Ветер: **${wind} км/ч**\n\n*Данные предоставлены ${company}*`;
-            } catch (e) {
-                return "Ошибка при запросе погоды. Сервер недоступен 😔";
-            }
-        }
-
-        // 2. Крипта (Реальная через CoinGecko)
-        async function getCrypto() {
-            try {
-                let res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,the-open-network&vs_currencies=usd');
-                let data = await res.json();
-                return `💰 **Текущие курсы криптовалют:**\n\n• **Bitcoin (BTC):** $${data.bitcoin.usd.toLocaleString()}\n• **Ethereum (ETH):** $${data.ethereum.usd.toLocaleString()}\n• **TON Coin:** $${data['the-open-network'].usd}\n\n*Заряжено ${company} 🚀*`;
-            } catch (e) {
-                return "Не смог получить курс криптовалют. Попробуй позже!";
-            }
-        }
-
-        // 3. Википедия
-        async function getWiki(query) {
-            try {
-                let res = await fetch(`https://ru.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`);
-                let data = await res.json();
-                if (data.extract) return `📚 **${data.title}**\n${data.extract}\n\n*[Читать подробнее](${data.content_urls.desktop.page})*`;
-                return "Ничего не нашел в Википедии по этому запросу 🤔";
-            } catch (e) {
-                return "Ошибка поиска. Попробуй переформулировать.";
-            }
-        }
-
-        // ОСНОВНАЯ ЛОГИКА ОТВЕТОВ
-        async function getBotResponse(text) {
-            let msg = text.toLowerCase().trim();
-
-            if (msg.includes("привет") || msg === "старт" || msg === "/start") return getRandom(botData.greetings);
-            if (msg.includes("факт")) return getRandom(botData.facts);
-            if (msg.includes("крипт") || msg.includes("биткоин")) return await getCrypto();
-
-            // Парсер погоды (ищет слово после "в " или "город ")
-            if (msg.includes("погода")) {
-                let city = "Москве"; // по умолчанию
-                let match = msg.match(/(?:в|городе)\s+([а-яА-Яa-zA-Z-]+)/);
-                if (match) city = match[1];
-                return await getWeather(city);
-            }
-
-            // Парсер Википедии
-            if (msg.includes("что такое") || msg.includes("кто так") || msg.includes("расскажи про")) {
-                let query = msg.replace(/что такое|кто такой|кто такая|кто такие|расскажи про/g, "").trim();
-                return await getWiki(query);
-            }
-
-            // Калькулятор (Безопасный математический парсер)
-            if (/^[0-9+\-*/().\s]+$/.test(msg) && msg.length > 2) {
-                try {
-                    let calc = new Function('return ' + msg)();
-                    return `🧮 Результат: **${calc}**`;
-                } catch { /* игнорируем ошибку и идем дальше */ }
-            }
-
-            // Камень ножницы бумага
-            if (msg.includes("камень") || msg.includes("ножницы") || msg.includes("бумага")) {
-                const choices = ["Камень 🪨", "Ножницы ✂️", "Бумага 📄"];
-                return `Я выбрал: **${getRandom(choices)}**. Кто победил? 🎲`;
-            }
-
-            return "Я еще учусь! Попробуй спросить меня: **Погода в Лондоне**, **Курс крипты**, **Что такое нейросеть** или просто **напиши математический пример**. 🤖";
-        }
-
-        // --- УПРАВЛЕНИЕ ИНТЕРФЕЙСОМ ---
+        // --- UI ЛОГИКА ---
         const chat = document.getElementById('chat');
         const input = document.getElementById('userInput');
-        let history = JSON.parse(localStorage.getItem('gmone_history')) || [];
+        let history = JSON.parse(localStorage.getItem('gmone_hist')) || [];
 
         function renderHistory() {
             chat.innerHTML = '';
             if (history.length === 0) {
-                appendMessage(botData.greetings[0], 'bot', false);
+                appendMsg(`Привет, **${userName}**! Я GmOne. Напиши мне что-нибудь!`, 'bot', false, true);
             } else {
-                history.forEach(h => appendMessage(h.text, h.sender, false, true));
+                history.forEach(h => appendMsg(h.text, h.sender, false, true));
             }
         }
 
-        function appendMessage(text, sender, save = true, noAnim = false) {
-            const wrapper = document.createElement('div');
-            wrapper.className = `message-wrapper ${sender}`;
-            if (noAnim) wrapper.style.animation = 'none'; // Отключаем анимацию для истории
+        function appendMsg(text, sender, save = true, noAnim = false) {
+            const wrap = document.createElement('div');
+            wrap.className = `message-wrapper ${sender}`;
+            if (noAnim) wrap.style.animation = 'none';
 
-            const avatar = document.createElement('div');
-            avatar.className = `avatar-small ${sender === 'bot' ? 'avatar-bot' : 'avatar-user'}`;
-            avatar.textContent = sender === 'bot' ? '🤖' : userName.charAt(0).toUpperCase();
+            const ava = document.createElement('div');
+            ava.className = `avatar ${sender === 'bot' ? 'avatar-bot' : 'avatar-user'}`;
+            ava.textContent = sender === 'bot' ? '🤖' : userName.charAt(0).toUpperCase();
 
             const msgDiv = document.createElement('div');
             msgDiv.className = `message ${sender}`;
-            
-            // Если бот - рендерим Markdown, если юзер - просто текст
             msgDiv.innerHTML = sender === 'bot' ? marked.parse(text) : text;
 
-            wrapper.appendChild(avatar);
-            wrapper.appendChild(msgDiv);
-            chat.appendChild(wrapper);
-            
-            // Плавный скролл вниз
+            wrap.append(ava, msgDiv);
+            chat.append(wrap);
             setTimeout(() => chat.scrollTop = chat.scrollHeight, 50);
 
             if (save) {
                 history.push({ text, sender });
-                if (history.length > 30) history.shift(); // Храним 30 сообщений
-                localStorage.setItem('gmone_history', JSON.stringify(history));
+                if (history.length > 40) history.shift();
+                localStorage.setItem('gmone_hist', JSON.stringify(history));
             }
         }
 
-        function showTyping() {
-            const wrapper = document.createElement('div');
-            wrapper.className = `message-wrapper bot`;
-            wrapper.id = 'typingIndicator';
-            
-            const avatar = document.createElement('div');
-            avatar.className = `avatar-small avatar-bot`;
-            avatar.textContent = '🤖';
-
-            const msgDiv = document.createElement('div');
-            msgDiv.className = `message bot typing-indicator`;
-            msgDiv.innerHTML = '<div class="dot"></div><div class="dot"></div><div class="dot"></div>';
-
-            wrapper.appendChild(avatar);
-            wrapper.appendChild(msgDiv);
-            chat.appendChild(wrapper);
-            chat.scrollTop = chat.scrollHeight;
+        function toggleTyping(show) {
+            if (show) {
+                const wrap = document.createElement('div');
+                wrap.className = `message-wrapper bot`;
+                wrap.id = 'typing';
+                wrap.innerHTML = `<div class="avatar avatar-bot">🤖</div><div class="message bot typing"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>`;
+                chat.append(wrap);
+                chat.scrollTop = chat.scrollHeight;
+            } else {
+                const t = document.getElementById('typing');
+                if (t) t.remove();
+            }
         }
 
-        function hideTyping() {
-            const typing = document.getElementById('typingIndicator');
-            if (typing) typing.remove();
-        }
-
-        async function sendMessage(textOverride = null) {
-            const text = textOverride || input.value.trim();
+        async function sendMessage(overrideText = null) {
+            const text = overrideText || input.value.trim();
             if (!text) return;
 
-            tg.HapticFeedback.impactOccurred('light'); // Вибрация
+            tg.HapticFeedback.impactOccurred('light');
             input.value = '';
-            
-            appendMessage(text, 'user');
-            showTyping();
+            appendMsg(text, 'user');
+            toggleTyping(true);
 
-            // Имитируем "обдумывание" от 0.5 до 1.5 секунд
-            const thinkingTime = Math.random() * 1000 + 500;
-            
-            const response = await getBotResponse(text);
+            const thinking = Math.random() * 800 + 400; // 0.4 - 1.2 сек задержка
+            const response = await Brain.process(text);
 
             setTimeout(() => {
-                hideTyping();
-                appendMessage(response, 'bot');
+                toggleTyping(false);
+                appendMsg(response, 'bot');
                 tg.HapticFeedback.notificationOccurred('success');
-            }, thinkingTime);
+            }, thinking);
         }
 
-        function handleKeyPress(e) {
-            if (e.key === 'Enter') sendMessage();
-        }
-
-        function sendQuick(text) {
-            sendMessage(text);
-        }
+        function handleKeyPress(e) { if (e.key === 'Enter') sendMessage(); }
 
         function clearChat() {
             tg.HapticFeedback.impactOccurred('medium');
             history = [];
-            localStorage.removeItem('gmone_history');
+            localStorage.removeItem('gmone_hist');
             renderHistory();
         }
 
-        // Инициализация
+        // Навигация (вкладки)
+        function switchTab(tabId, element) {
+            tg.HapticFeedback.selectionChanged();
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            
+            document.getElementById(`screen-${tabId}`).classList.add('active');
+            element.classList.add('active');
+            
+            // Если перешли в чат - скроллим вниз
+            if(tabId === 'chat') setTimeout(() => chat.scrollTop = chat.scrollHeight, 50);
+        }
+
+        function useSkill(text) {
+            switchTab('chat', document.querySelectorAll('.nav-item')[0]);
+            setTimeout(() => sendMessage(text), 200);
+        }
+
         renderHistory();
     </script>
 </body>
