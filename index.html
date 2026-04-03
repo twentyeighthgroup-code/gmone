@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>GmOne AI</title>
+    <!-- Подключаем скрипт Telegram Mini Apps -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        /* Стили адаптированы под цвета Telegram */
+        body {
+            font-family: Arial, sans-serif;
+            background-color: var(--tg-theme-bg-color, #ffffff);
+            color: var(--tg-theme-text-color, #000000);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        .header {
+            background-color: var(--tg-theme-secondary-bg-color, #f1f1f1);
+            padding: 15px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 18px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .clear-btn {
+            background: none;
+            border: none;
+            color: var(--tg-theme-button-color, #3390ec);
+            font-size: 14px;
+            cursor: pointer;
+        }
+        .chat-container {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .message {
+            max-width: 80%;
+            padding: 10px 15px;
+            border-radius: 15px;
+            line-height: 1.4;
+            word-wrap: break-word;
+        }
+        .message.bot {
+            background-color: var(--tg-theme-secondary-bg-color, #f1f1f1);
+            align-self: flex-start;
+            border-bottom-left-radius: 5px;
+        }
+        .message.user {
+            background-color: var(--tg-theme-button-color, #3390ec);
+            color: var(--tg-theme-button-text-color, #ffffff);
+            align-self: flex-end;
+            border-bottom-right-radius: 5px;
+        }
+        .input-container {
+            display: flex;
+            padding: 10px;
+            background-color: var(--tg-theme-bg-color, #ffffff);
+            border-top: 1px solid var(--tg-theme-secondary-bg-color, #e0e0e0);
+        }
+        input[type="text"] {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid var(--tg-theme-secondary-bg-color, #ccc);
+            border-radius: 20px;
+            background-color: var(--tg-theme-bg-color, #ffffff);
+            color: var(--tg-theme-text-color, #000000);
+            outline: none;
+        }
+        button.send-btn {
+            background-color: var(--tg-theme-button-color, #3390ec);
+            color: var(--tg-theme-button-text-color, #ffffff);
+            border: none;
+            border-radius: 50%;
+            width: 42px;
+            height: 42px;
+            margin-left: 10px;
+            cursor: pointer;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <span id="header-title">GmOne от Tegcompany</span>
+        <button class="clear-btn" onclick="clearChat()">Очистить</button>
+    </div>
+
+    <div class="chat-container" id="chat">
+        <!-- Сообщения будут тут -->
+    </div>
+
+    <div class="input-container">
+        <input type="text" id="userInput" placeholder="Напиши сообщение..." onkeypress="handleKeyPress(event)">
+        <button class="send-btn" onclick="sendMessage()">➤</button>
+    </div>
+
+    <script>
+        // Инициализация Telegram
+        const tg = window.Telegram.WebApp;
+        tg.expand(); // Расширяем на весь экран
+        
+        const userName = tg.initDataUnsafe?.user?.first_name || "друг";
+        const company = "Tegcompany";
+
+        // База знаний бота (перенесена из Python)
+        const botData = {
+            greetings: [`Привет, ${userName}! Чем помогу от ${company}?`, `Здравствуй! ${company} на связи. Что нужно?`, `Йо! Готов помочь от ${company}. 😄`],
+            jokes: ["Почему программисты путают Хэллоуин и Рождество? Oct 31 = Dec 25! 😄", "ИИ без кофе — как код без багов: миф! ☕", "Как программист ловит рыбу? Сетью! 🐟"],
+            facts: ["Медузы бессмертны! 🌊", "Земля вращается 1600 км/ч. Держись! 🌍", "Мёд никогда не портится. 🐝", "Осьминоги имеют три сердца. ❤️❤️❤️"],
+            advices: ["Pomodoro: 25 мин работы!", "Будь позитивным!", "Сделай перерыв и выпей воды!"],
+            motivations: [`«Успех — это сумма маленьких усилий.» Вперёд с ${company}!`, `Ты сильнее, чем думаешь! — Мотивирует ${company}. 😊`, `Каждый день — новый шанс. 🚀`],
+        };
+
+        function getRandom(arr) {
+            return arr[Math.floor(Math.random() * arr.length)];
+        }
+
+        // Логика ответов ИИ
+        async function getBotResponse(text) {
+            let msg = text.toLowerCase();
+
+            if (msg.includes("привет")) return getRandom(botData.greetings);
+            if (msg.includes("пока")) return `До встречи! С ${company} было круто. 🚀`;
+            if (msg.includes("шутка")) return getRandom(botData.jokes);
+            if (msg.includes("факт")) return getRandom(botData.facts);
+            if (msg.includes("совет")) return `Совет от ${company}: ${getRandom(botData.advices)}`;
+            if (msg.includes("мотивируй")) return getRandom(botData.motivations);
+            
+            // Игра камень ножницы бумага
+            if (msg.includes("камень") || msg.includes("ножницы") || msg.includes("бумага")) {
+                const choices = ["камень", "ножницы", "бумага"];
+                const botChoice = getRandom(choices);
+                return `Я выбрал: ${botChoice}. Сыграем еще? 🎲`;
+            }
+
+            // Калькулятор (безопасный eval)
+            if (msg.match(/^[0-9+\-*/().\s]+$/) && msg.trim().length > 2) {
+                try {
+                    return `Результат: ${eval(msg)}`;
+                } catch (e) {
+                    return "Ошибка в выражении.";
+                }
+            }
+
+            // Поиск по Википедии (Замена DuckDuckGo)
+            if (msg.includes("что такое") || msg.includes("кто такой")) {
+                let query = msg.replace("что такое", "").replace("кто такой", "").trim();
+                try {
+                    let response = await fetch(`https://ru.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`);
+                    let data = await response.json();
+                    if (data.extract) {
+                        return `${data.extract} (Поиск от ${company} 🔍)`;
+                    }
+                } catch (e) {
+                    console.log("Wiki error:", e);
+                }
+            }
+
+            return "Не понял, уточни! Попробуй попросить шутку, факт, мотивацию или спроси 'что такое [слово]'. 🤔";
+        }
+
+        // UI Функции
+        const chat = document.getElementById('chat');
+        const input = document.getElementById('userInput');
+
+        // Загрузка истории из памяти телефона (вместо SQLite)
+        let history = JSON.parse(localStorage.getItem('chatHistory')) || [];
+
+        function renderHistory() {
+            chat.innerHTML = '';
+            if (history.length === 0) {
+                appendMessage(`Привет, ${userName}! Я GmOne от ${company}. Чем могу помочь?`, 'bot', false);
+            } else {
+                history.forEach(h => appendMessage(h.text, h.sender, false));
+            }
+        }
+
+        function appendMessage(text, sender, save = true) {
+            const div = document.createElement('div');
+            div.className = `message ${sender}`;
+            div.textContent = text;
+            chat.appendChild(div);
+            chat.scrollTop = chat.scrollHeight;
+
+            if (save) {
+                history.push({ text, sender });
+                // Храним только последние 20 сообщений
+                if (history.length > 20) history.shift();
+                localStorage.setItem('chatHistory', JSON.stringify(history));
+            }
+        }
+
+        async function sendMessage() {
+            const text = input.value.trim();
+            if (!text) return;
+
+            appendMessage(text, 'user');
+            input.value = '';
+
+            // Имитация "печатает..."
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'message bot';
+            typingDiv.textContent = '...';
+            chat.appendChild(typingDiv);
+            chat.scrollTop = chat.scrollHeight;
+
+            // Получаем ответ с небольшой задержкой
+            const response = await getBotResponse(text);
+            
+            chat.removeChild(typingDiv);
+            appendMessage(response, 'bot');
+            
+            // Вибрация телефона (Haptic feedback Телеграма)
+            tg.HapticFeedback.impactOccurred('light');
+        }
+
+        function handleKeyPress(e) {
+            if (e.key === 'Enter') sendMessage();
+        }
+
+        function clearChat() {
+            history = [];
+            localStorage.removeItem('chatHistory');
+            renderHistory();
+        }
+
+        // Запуск
+        renderHistory();
+    </script>
+</body>
+</html>
