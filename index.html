@@ -2,19 +2,16 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <!-- Специальные теги, чтобы приложение выглядело как нативное вне Telegram -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="theme-color" content="#f4f5f7">
-    <title>GmOne AI</title>
+    <title>GmOne</title>
     
-    <!-- Telegram API (загружается, но используется только если мы внутри ТГ) -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     
     <style>
-        /* Базовые цвета для обычного браузера (Светлая тема) */
         :root {
             --bg-color: #f4f5f7;
             --secondary-bg: #ffffff;
@@ -26,129 +23,110 @@
             --nav-height: 65px;
         }
 
-        /* Если открыто в браузере с темной темой */
         @media (prefers-color-scheme: dark) {
             :root {
-                --bg-color: #121212;
-                --secondary-bg: #1c1c1e;
-                --text-color: #ffffff;
-                --hint-color: #98989d;
-                --border-color: rgba(255, 255, 255, 0.08);
+                --bg-color: #121212; --secondary-bg: #1c1c1e; --text-color: #ffffff;
+                --hint-color: #98989d; --border-color: rgba(255, 255, 255, 0.08);
             }
         }
 
-        /* Но если мы в Telegram, переменные заменятся на цвета Telegram */
         body.tg-app {
-            --bg-color: var(--tg-theme-bg-color);
-            --secondary-bg: var(--tg-theme-secondary-bg-color);
-            --text-color: var(--tg-theme-text-color);
-            --hint-color: var(--tg-theme-hint-color);
-            --button-color: var(--tg-theme-button-color);
-            --button-text: var(--tg-theme-button-text-color);
+            --bg-color: var(--tg-theme-bg-color); --secondary-bg: var(--tg-theme-secondary-bg-color);
+            --text-color: var(--tg-theme-text-color); --hint-color: var(--tg-theme-hint-color);
+            --button-color: var(--tg-theme-button-color); --button-text: var(--tg-theme-button-text-color);
         }
 
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
-        /* Используем 100dvh для решения проблемы с адресной строкой мобильных браузеров */
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            margin: 0;
-            padding: 0;
-            display: flex;
-            flex-direction: column;
-            height: 100dvh; 
-            overflow: hidden;
-            transition: background-color 0.3s, color 0.3s;
+            background-color: var(--bg-color); color: var(--text-color);
+            margin: 0; padding: 0; display: flex; flex-direction: column;
+            height: 100dvh; overflow: hidden; transition: background-color 0.2s, color 0.2s;
         }
 
         /* Шапка */
         .header {
-            background-color: var(--secondary-bg);
-            padding: env(safe-area-inset-top, 15px) 20px 15px 20px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            font-weight: 700;
-            font-size: 18px;
-            z-index: 10;
-            border-bottom: 1px solid var(--border-color);
-            box-shadow: 0 1px 10px rgba(0,0,0,0.02);
+            background-color: var(--secondary-bg); padding: env(safe-area-inset-top, 15px) 20px 15px 20px;
+            display: flex; align-items: center; justify-content: space-between;
+            font-weight: 700; font-size: 18px; z-index: 10;
+            border-bottom: 1px solid var(--border-color); box-shadow: 0 1px 10px rgba(0,0,0,0.02);
         }
 
         /* Контейнеры экранов */
         .screen {
-            flex: 1;
-            display: none;
-            flex-direction: column;
-            overflow-y: auto;
+            flex: 1; display: none; flex-direction: column; overflow-y: auto;
             padding-bottom: calc(var(--nav-height) + env(safe-area-inset-bottom, 0px));
-            animation: fadeIn 0.2s ease-in-out;
+            animation: fadeIn 0.2s ease-in-out; will-change: opacity;
         }
         .screen.active { display: flex; }
-
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
         /* --- ЧАТ --- */
-        .chat-area { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+        .chat-area { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; scroll-behavior: smooth; }
         
-        .message-wrapper { display: flex; gap: 10px; animation: slideUp 0.3s cubic-bezier(0.25, 1, 0.5, 1) forwards; opacity: 0; transform: translateY(10px); }
+        .message-wrapper { 
+            display: flex; gap: 10px; opacity: 0; 
+            animation: slideUp 0.3s cubic-bezier(0.25, 1, 0.5, 1) forwards; 
+            will-change: transform, opacity; 
+        }
         .message-wrapper.user { flex-direction: row-reverse; }
-        @keyframes slideUp { to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideUp { 
+            from { opacity: 0; transform: translate3d(0, 15px, 0); } 
+            to { opacity: 1; transform: translate3d(0, 0, 0); } 
+        }
 
-        .avatar { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; }
-        .avatar-bot { background: linear-gradient(135deg, #007aff, #00c6ff); color: white; box-shadow: 0 2px 8px rgba(0, 122, 255, 0.3); }
-        .avatar-user { background-color: var(--secondary-bg); color: var(--text-color); border: 1px solid var(--border-color); }
+        /* Аватарки и Логотипы */
+        .avatar { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; overflow: hidden; background-color: var(--button-color);}
+        .avatar-user { background-color: var(--secondary-bg); color: var(--text-color); border: 1px solid var(--border-color); font-weight: bold;}
+        .bot-img { width: 100%; height: 100%; object-fit: cover; } 
 
         .message { max-width: 78%; padding: 10px 14px; border-radius: 18px; line-height: 1.45; font-size: 15px; word-wrap: break-word; }
         .message.bot { background-color: var(--secondary-bg); border-bottom-left-radius: 4px; border: 1px solid var(--border-color); }
         .message.user { background-color: var(--button-color); color: var(--button-text); border-bottom-right-radius: 4px; }
         
-        .message p { margin: 0 0 6px 0; }
-        .message p:last-child { margin: 0; }
+        .message p { margin: 0 0 6px 0; } .message p:last-child { margin: 0; }
         .message a { color: var(--button-color); text-decoration: none; font-weight: 500;}
 
-        /* Индикатор печати */
+        /* Индикатор печати (оптимизированный) */
         .typing { display: flex; gap: 4px; padding: 5px 0; }
-        .dot { width: 6px; height: 6px; background-color: var(--hint-color); border-radius: 50%; animation: bounce 1.4s infinite ease-in-out both; }
-        .dot:nth-child(1) { animation-delay: -0.32s; }
-        .dot:nth-child(2) { animation-delay: -0.16s; }
+        .dot { width: 6px; height: 6px; background-color: var(--hint-color); border-radius: 50%; animation: bounce 1.4s infinite ease-in-out both; will-change: transform; }
+        .dot:nth-child(1) { animation-delay: -0.32s; } .dot:nth-child(2) { animation-delay: -0.16s; }
         @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
 
         /* Поле ввода */
         .input-area { 
-            padding: 10px 15px 15px; 
-            background-color: var(--bg-color); 
+            padding: 10px 15px 15px; background-color: var(--bg-color); 
             display: flex; gap: 10px; align-items: flex-end; 
             border-top: 1px solid var(--border-color); 
             position: fixed; bottom: var(--nav-height); width: 100%; z-index: 10; 
             padding-bottom: calc(15px + env(safe-area-inset-bottom, 0px));
         }
-        input[type="text"] { flex: 1; padding: 14px 18px; border: 1px solid var(--border-color); border-radius: 22px; background-color: var(--secondary-bg); color: var(--text-color); font-size: 16px; outline: none; transition: 0.2s; }
+        input[type="text"] { flex: 1; padding: 14px 18px; border: 1px solid var(--border-color); border-radius: 22px; background-color: var(--secondary-bg); color: var(--text-color); font-size: 16px; outline: none; transition: border-color 0.2s; }
         input[type="text"]:focus { border-color: var(--button-color); }
-        .send-btn { background-color: var(--button-color); color: var(--button-text); border: none; border-radius: 50%; width: 46px; height: 46px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.1s; }
+        .send-btn { background-color: var(--button-color); color: var(--button-text); border: none; border-radius: 50%; width: 46px; height: 46px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.1s; }
         .send-btn:active { transform: scale(0.92); }
+        .send-btn:disabled { opacity: 0.5; pointer-events: none; }
         .send-btn svg { width: 22px; fill: currentColor; transform: translateX(2px); }
 
         /* --- НАВЫКИ И О НАС --- */
         .page-content { padding: 20px; max-width: 600px; margin: 0 auto; width: 100%;}
         .page-title { font-size: 26px; font-weight: 800; margin-bottom: 20px; color: var(--text-color); }
         
-        .skill-card { background-color: var(--secondary-bg); padding: 16px; border-radius: 14px; margin-bottom: 12px; cursor: pointer; border: 1px solid var(--border-color); transition: 0.2s; }
-        .skill-card:active { transform: scale(0.98); opacity: 0.8; }
+        .skill-card { background-color: var(--secondary-bg); padding: 16px; border-radius: 14px; margin-bottom: 12px; cursor: pointer; border: 1px solid var(--border-color); transition: transform 0.2s, opacity 0.2s; will-change: transform; }
+        .skill-card:active { transform: scale(0.97); opacity: 0.8; }
         .skill-title { font-weight: 700; font-size: 16px; margin-bottom: 6px; color: var(--button-color); }
         .skill-desc { font-size: 14px; color: var(--hint-color); line-height: 1.4; }
 
         .about-card { background-color: var(--secondary-bg); padding: 24px 20px; border-radius: 18px; text-align: center; margin-bottom: 20px; border: 1px solid var(--border-color); }
-        .about-logo { font-size: 54px; margin-bottom: 15px; }
+        .about-logo-large { width: 80px; height: 80px; border-radius: 20px; margin: 0 auto 15px auto; object-fit: cover; display: block; box-shadow: 0 4px 15px rgba(0,0,0,0.1); background-color: var(--button-color);}
         .about-card h2 { margin: 0 0 10px 0; font-size: 24px; font-weight: 800;}
         .about-card p { font-size: 15px; color: var(--hint-color); line-height: 1.5; margin: 0; }
         .dev-badge { display: inline-block; background-color: var(--button-color); color: var(--button-text); padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: bold; margin-top: 18px; }
 
         /* --- НИЖНЯЯ НАВИГАЦИЯ --- */
         .bottom-nav { position: fixed; bottom: 0; width: 100%; height: calc(var(--nav-height) + env(safe-area-inset-bottom, 0px)); background-color: var(--secondary-bg); display: flex; justify-content: space-around; align-items: flex-start; border-top: 1px solid var(--border-color); z-index: 20; padding-top: 8px;}
-        .nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 33%; color: var(--hint-color); font-size: 11px; cursor: pointer; transition: 0.2s; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 33%; color: var(--hint-color); font-size: 11px; cursor: pointer; transition: color 0.2s; }
         .nav-item.active { color: var(--button-color); font-weight: 600; }
         .nav-item svg { width: 24px; height: 24px; margin-bottom: 4px; fill: currentColor; }
     </style>
@@ -165,8 +143,8 @@
     <div id="screen-chat" class="screen active">
         <div class="chat-area" id="chat"></div>
         <div class="input-area">
-            <input type="text" id="userInput" placeholder="Спроси меня о чем угодно..." onkeypress="handleKeyPress(event)" autocomplete="off">
-            <button class="send-btn" onclick="sendMessage()">
+            <input type="text" id="userInput" placeholder="Напиши что-нибудь..." onkeypress="handleKeyPress(event)" autocomplete="off">
+            <button class="send-btn" id="sendBtn" onclick="sendMessage()">
                 <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
             </button>
         </div>
@@ -175,31 +153,31 @@
     <!-- ЭКРАН 2: НАВЫКИ -->
     <div id="screen-skills" class="screen">
         <div class="page-content">
-            <div class="page-title">Мои возможности</div>
+            <div class="page-title">Возможности</div>
             
-            <div class="skill-card" onclick="useSkill('Погода в Москве')">
-                <div class="skill-title">🌤 Прогноз погоды</div>
-                <div class="skill-desc">Напиши «Погода в [Город]», и я скажу актуальную температуру на данный момент.</div>
+            <div class="skill-card" onclick="useSkill('Альберт Эйнштейн')">
+                <div class="skill-title">🧠 Умный поиск</div>
+                <div class="skill-desc">Просто напиши любое имя, термин или явление. Например: «Сингулярность» или «Илон Маск».</div>
             </div>
-            
-            <div class="skill-card" onclick="useSkill('Что такое искусственный интеллект?')">
-                <div class="skill-title">🧠 База знаний</div>
-                <div class="skill-desc">Спроси «Что такое...» или «Кто такой...», и я найду ответ в глобальной сети.</div>
+
+            <div class="skill-card" onclick="useSkill('Погода в Москве')">
+                <div class="skill-title">🌤 Погода онлайн</div>
+                <div class="skill-desc">Узнай актуальную температуру в любом городе.</div>
             </div>
 
             <div class="skill-card" onclick="useSkill('Курс крипты')">
                 <div class="skill-title">💰 Финансы</div>
-                <div class="skill-desc">Напиши «Курс крипты», чтобы узнать свежие цены Bitcoin, Ethereum и TON.</div>
+                <div class="skill-desc">Свежие цены на Bitcoin, Ethereum и TON.</div>
             </div>
 
             <div class="skill-card" onclick="useSkill('Какое сегодня число?')">
-                <div class="skill-title">⏰ Календарь</div>
-                <div class="skill-desc">Спроси «Который час?» или «Какое сегодня число?».</div>
+                <div class="skill-title">⏰ Время и Дата</div>
+                <div class="skill-desc">Точное местное время и календарь.</div>
             </div>
 
-            <div class="skill-card" onclick="useSkill('1540 * 12 / 4')">
-                <div class="skill-title">🧮 Вычисления</div>
-                <div class="skill-desc">Просто отправь мне любой сложный математический пример.</div>
+            <div class="skill-card" onclick="useSkill('1250 * 4 / 2')">
+                <div class="skill-title">🧮 Калькулятор</div>
+                <div class="skill-desc">Мгновенное решение математических примеров.</div>
             </div>
         </div>
     </div>
@@ -208,19 +186,18 @@
     <div id="screen-about" class="screen">
         <div class="page-content">
             <div class="about-card">
-                <div class="about-logo">🤖</div>
+                <!-- Большой логотип -->
+                <img class="about-logo-large bot-img" src="" alt="GmOne Logo">
                 <h2>GmOne</h2>
-                <p>Ваш личный универсальный ИИ-ассистент. Создан для поиска информации, вычислений и помощи в повседневных задачах.</p>
-                <div class="dev-badge">Версия 0.1</div>
+                <p>Ваш личный универсальный ИИ-ассистент. Создан для быстрого поиска ответов и помощи в повседневных задачах.</p>
+                <div class="dev-badge">Версия 0.2</div>
             </div>
 
             <div class="about-card" style="text-align: left;">
-                <h3 style="margin-top:0; font-size:18px; color: var(--text-color);">Сделано в Tegcompany</h3>
+                <h3 style="margin-top:0; font-size:18px; color: var(--text-color);">Tegcompany</h3>
                 <p>Инновационная ИТ-компания, основанная в Республике Беларусь.</p>
                 <br>
                 <p><strong>Основатель:</strong><br>Юркевич Артём Игоревич</p>
-                <br>
-                <p>Наша цель — создание удобных, быстрых и современных технологических решений для людей.</p>
             </div>
         </div>
     </div>
@@ -242,20 +219,35 @@
     </div>
 
     <script>
-        // Безопасная инициализация Telegram
+        // ==========================================
+        // 🔴 ЛОГОТИП (ТЕПЕРЬ ИЩЕТ ФАЙЛ В ПАПКЕ GITHUB)
+        const BOT_LOGO_URL = "logo.png";
+        // ==========================================
+
+        document.querySelectorAll('.bot-img').forEach(img => {
+            img.src = BOT_LOGO_URL;
+            // Если логотип еще не загрузился или удален, будет просто пустой синий квадрат
+            img.onerror = () => { img.style.display = 'none'; }; 
+        });
+
+        const $chat = document.getElementById('chat');
+        const $input = document.getElementById('userInput');
+        const $sendBtn = document.getElementById('sendBtn');
+        const $screens = document.querySelectorAll('.screen');
+        const $navItems = document.querySelectorAll('.nav-item');
+
         let tg = null;
         let userName = "Гость";
 
-        if (window.Telegram && window.Telegram.WebApp && window.Telegram.WebApp.initData) {
+        if (window.Telegram?.WebApp?.initData) {
             tg = window.Telegram.WebApp;
             tg.expand();
-            document.body.classList.add('tg-app'); // Включаем цвета ТГ только внутри ТГ
+            document.body.classList.add('tg-app');
             userName = tg.initDataUnsafe?.user?.first_name || "друг";
         }
 
-        // Функция безопасной вибрации (работает только в ТГ, в браузере не вызывает ошибок)
         function vibrate(type = 'light') {
-            if (tg && tg.HapticFeedback) {
+            if (tg?.HapticFeedback) {
                 try {
                     if (type === 'light' || type === 'medium') tg.HapticFeedback.impactOccurred(type);
                     if (type === 'success') tg.HapticFeedback.notificationOccurred('success');
@@ -266,81 +258,87 @@
 
         marked.setOptions({ sanitize: true });
 
-        // --- ЛОГИКА ИНТЕЛЛЕКТА (Мозг GmOne) ---
+        // --- МОЗГ ИИ ---
         const Brain = {
             async getWeather(city) {
                 try {
                     let geo = await (await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=ru`)).json();
-                    if (!geo.results) return `К сожалению, я не нашел город "${city}". Проверь правильность написания.`;
+                    if (!geo.results) return null; 
                     let weather = await (await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${geo.results[0].latitude}&longitude=${geo.results[0].longitude}&current_weather=true`)).json();
                     return `🌤 **${geo.results[0].name}:** Температура **${weather.current_weather.temperature}°C**, ветер ${weather.current_weather.windspeed} км/ч.`;
-                } catch (e) { return "Сервис погоды временно недоступен 😔"; }
+                } catch (e) { return null; }
             },
             async getCrypto() {
                 try {
                     let data = await (await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,the-open-network&vs_currencies=usd')).json();
-                    return `💰 **Актуальный курс криптовалют:**\n\n• **Bitcoin (BTC):** $${data.bitcoin.usd.toLocaleString()}\n• **Ethereum (ETH):** $${data.ethereum.usd.toLocaleString()}\n• **TON Coin:** $${data['the-open-network'].usd}`;
-                } catch (e) { return "В данный момент не могу получить данные о курсах валют."; }
+                    return `💰 **Курс криптовалют:**\n\n• **BTC:** $${data.bitcoin.usd.toLocaleString()}\n• **ETH:** $${data.ethereum.usd.toLocaleString()}\n• **TON:** $${data['the-open-network'].usd}`;
+                } catch (e) { return null; }
             },
             async getWiki(query) {
                 try {
-                    let data = await (await fetch(`https://ru.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`)).json();
-                    return data.extract ? `📚 **${data.title}**\n${data.extract}\n\n*[Читать полную статью](${data.content_urls.desktop.page})*` : "В базе знаний нет точного ответа на этот запрос.";
-                } catch (e) { return "Не смог достучаться до энциклопедии. Попробуй позже."; }
+                    let cleanQuery = query.replace(/[?!.]/g, '').trim();
+                    let data = await (await fetch(`https://ru.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(cleanQuery)}`)).json();
+                    if (data.type === "disambiguation") return `Нашел несколько значений для "${cleanQuery}". Уточни запрос.`;
+                    return data.extract ? `📚 **${data.title}**\n${data.extract}\n\n*[Читать статью полностью](${data.content_urls.desktop.page})*` : null;
+                } catch (e) { return null; }
             },
             getTime() {
                 const now = new Date();
-                return `⏰ Местное время: **${now.toLocaleTimeString('ru-RU', {hour: '2-digit', minute:'2-digit'})}**.\n📅 Дата: **${now.toLocaleDateString('ru-RU')}**`;
+                return `⏰ Время: **${now.toLocaleTimeString('ru-RU', {hour: '2-digit', minute:'2-digit'})}**.\n📅 Дата: **${now.toLocaleDateString('ru-RU')}**`;
             },
             
             async process(text) {
                 let msg = text.toLowerCase().trim();
 
-                // Приветствия
-                if (/^(привет|старт|\/start|здравствуй|хай|добрый день|доброе утро|добрый вечер)/.test(msg)) {
-                    return `Привет, **${userName}**! Я GmOne — твой персональный ИИ-ассистент. Задай мне любой вопрос или посмотри раздел "Навыки", чтобы узнать, что я умею. 🚀`;
+                if (/^(привет|старт|\/start|здравствуй|хай|добрый день)/.test(msg)) {
+                    return `Привет, **${userName}**! Я GmOne. Напиши мне любой термин, чтобы узнать о нем, реши математический пример или спроси про погоду. 🚀`;
                 }
 
-                // Время и дата
                 if (/(время|часы|который час|число|дата|сегодня)/.test(msg)) return this.getTime();
 
-                // Погода
-                let weatherMatch = msg.match(/(?:погода\s+(?:в\s+)?|город\s+)([а-яА-Яa-zA-Z-]+)/);
-                if (weatherMatch || msg === 'погода') return await this.getWeather(weatherMatch ? weatherMatch[1] : 'Москве');
-
-                // Крипта
-                if (/(крипт|биткоин|курс|валют)/.test(msg)) return await this.getCrypto();
-
-                // Энциклопедия (Вики)
-                let wikiMatch = msg.match(/(?:что такое|кто так(?:ой|ая|ие)|расскажи про)\s+(.+)/);
-                if (wikiMatch) return await this.getWiki(wikiMatch[1].replace('?', ''));
-
-                // Калькулятор
                 if (/^[0-9+\-*/().\s]+$/.test(msg) && msg.length > 2) {
                     try { return `🧮 Ответ: **${new Function('return ' + msg)()}**`; } catch (e) {}
                 }
 
-                // Игры
                 if (/(камень|ножницы|бумага)/.test(msg)) {
                     let c = ["Камень 🪨", "Ножницы ✂️", "Бумага 📄"];
-                    return `Я выбираю: **${c[Math.floor(Math.random()*c.length)]}**. Чья взяла? 😎`;
+                    return `Мой выбор: **${c[Math.floor(Math.random()*c.length)]}**.`;
                 }
 
-                // Дефолтный ответ
-                return "Хм, пока не знаю точного ответа на это. Попробуй спросить меня про погоду в твоем городе, курс валют, посчитать пример или загляни в меню **Навыки**! 🤖";
+                let weatherMatch = msg.match(/(?:погода\s+(?:в\s+)?|город\s+)([а-яА-Яa-zA-Z-]+)/);
+                if (weatherMatch || msg === 'погода') {
+                    let w = await this.getWeather(weatherMatch ? weatherMatch[1] : 'Москве');
+                    if (w) return w;
+                }
+
+                if (/(крипт|биткоин|курс|валют)/.test(msg)) {
+                    let c = await this.getCrypto();
+                    if (c) return c;
+                }
+
+                let wikiMatch = msg.match(/(?:что такое|кто так(?:ой|ая|ие)|расскажи про)\s+(.+)/);
+                if (wikiMatch) {
+                    let w = await this.getWiki(wikiMatch[1]);
+                    if (w) return w;
+                }
+
+                const wordCount = msg.split(/\s+/).length;
+                if (wordCount <= 4) {
+                    let autoWiki = await this.getWiki(msg);
+                    if (autoWiki) return autoWiki;
+                }
+
+                return "Хм, не смог найти точный ответ. Попробуй переформулировать запрос или загляни в меню **Навыки**! 🤖";
             }
         };
 
-        // --- UI ЛОГИКА ---
-        const chat = document.getElementById('chat');
-        const input = document.getElementById('userInput');
-        let history = JSON.parse(localStorage.getItem('gmone_app_hist')) || [];
+        // --- УПРАВЛЕНИЕ ИНТЕРФЕЙСОМ ---
+        let history = JSON.parse(localStorage.getItem('gmone_opt_hist')) || [];
 
         function renderHistory() {
-            chat.innerHTML = '';
+            $chat.innerHTML = '';
             if (history.length === 0) {
-                let initialName = userName !== "Гость" ? `, **${userName}**` : "";
-                appendMsg(`Привет${initialName}! Я GmOne. Напиши мне что-нибудь, и мы начнем!`, 'bot', false, true);
+                appendMsg(`Привет! Я GmOne. Отправь мне любой запрос, например: **Альберт Эйнштейн**, **Курс крипты** или **Погода в Париже**.`, 'bot', false, true);
             } else {
                 history.forEach(h => appendMsg(h.text, h.sender, false, true));
             }
@@ -351,22 +349,27 @@
             wrap.className = `message-wrapper ${sender}`;
             if (noAnim) wrap.style.animation = 'none';
 
-            const ava = document.createElement('div');
-            ava.className = `avatar ${sender === 'bot' ? 'avatar-bot' : 'avatar-user'}`;
-            ava.textContent = sender === 'bot' ? '🤖' : userName.charAt(0).toUpperCase();
+            let avatarHTML = '';
+            if (sender === 'bot') {
+                avatarHTML = `<div class="avatar"><img class="bot-img" src="${BOT_LOGO_URL}" onerror="this.style.display='none'"></div>`;
+            } else {
+                avatarHTML = `<div class="avatar avatar-user">${userName.charAt(0).toUpperCase()}</div>`;
+            }
 
             const msgDiv = document.createElement('div');
             msgDiv.className = `message ${sender}`;
             msgDiv.innerHTML = sender === 'bot' ? marked.parse(text) : text;
 
-            wrap.append(ava, msgDiv);
-            chat.append(wrap);
-            setTimeout(() => chat.scrollTop = chat.scrollHeight, 50);
+            wrap.innerHTML = avatarHTML;
+            wrap.appendChild(msgDiv);
+            $chat.appendChild(wrap);
+            
+            $chat.scrollTo({ top: $chat.scrollHeight, behavior: 'smooth' });
 
             if (save) {
                 history.push({ text, sender });
                 if (history.length > 50) history.shift();
-                localStorage.setItem('gmone_app_hist', JSON.stringify(history));
+                localStorage.setItem('gmone_opt_hist', JSON.stringify(history));
             }
         }
 
@@ -375,31 +378,40 @@
                 const wrap = document.createElement('div');
                 wrap.className = `message-wrapper bot`;
                 wrap.id = 'typing';
-                wrap.innerHTML = `<div class="avatar avatar-bot">🤖</div><div class="message bot typing"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>`;
-                chat.append(wrap);
-                chat.scrollTop = chat.scrollHeight;
+                wrap.innerHTML = `<div class="avatar"><img class="bot-img" src="${BOT_LOGO_URL}" onerror="this.style.display='none'"></div><div class="message bot typing"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>`;
+                $chat.appendChild(wrap);
+                $chat.scrollTo({ top: $chat.scrollHeight, behavior: 'smooth' });
             } else {
                 const t = document.getElementById('typing');
                 if (t) t.remove();
             }
         }
 
+        let isProcessing = false;
+
         async function sendMessage(overrideText = null) {
-            const text = overrideText || input.value.trim();
+            if (isProcessing) return; 
+            const text = overrideText || $input.value.trim();
             if (!text) return;
 
+            isProcessing = true;
+            $sendBtn.disabled = true; 
             vibrate('light');
-            input.value = '';
+            
+            $input.value = '';
             appendMsg(text, 'user');
             toggleTyping(true);
 
-            const thinking = Math.random() * 800 + 400; 
+            const thinking = Math.random() * 600 + 400; 
             const response = await Brain.process(text);
 
             setTimeout(() => {
                 toggleTyping(false);
                 appendMsg(response, 'bot');
                 vibrate('success');
+                isProcessing = false;
+                $sendBtn.disabled = false;
+                $input.focus(); 
             }, thinking);
         }
 
@@ -408,23 +420,23 @@
         function clearChat() {
             vibrate('medium');
             history = [];
-            localStorage.removeItem('gmone_app_hist');
+            localStorage.removeItem('gmone_opt_hist');
             renderHistory();
         }
 
         function switchTab(tabId, element) {
             vibrate('select');
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            $screens.forEach(s => s.classList.remove('active'));
+            $navItems.forEach(n => n.classList.remove('active'));
             
             document.getElementById(`screen-${tabId}`).classList.add('active');
             element.classList.add('active');
             
-            if(tabId === 'chat') setTimeout(() => chat.scrollTop = chat.scrollHeight, 50);
+            if(tabId === 'chat') setTimeout(() => $chat.scrollTo({ top: $chat.scrollHeight }), 50);
         }
 
         function useSkill(text) {
-            switchTab('chat', document.querySelectorAll('.nav-item')[0]);
+            switchTab('chat', $navItems[0]);
             setTimeout(() => sendMessage(text), 200);
         }
 
