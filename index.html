@@ -8,65 +8,69 @@
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
         :root { 
-            --bg: #09090b; --surface: #18181b; --text: #ffffff; 
-            --accent: #6366f1; --secondary: #71717a; --border: #27272a; 
-            --radius: 16px;
+            --bg: #f8fafc; --surface: #ffffff; --text: #1e293b; --accent: #2563eb; 
+            --bubble-bot: #f1f5f9; --bubble-user: #2563eb; --border: #e2e8f0;
         }
         body { font-family: -apple-system, BlinkMacSystemFont, "Inter", sans-serif; background: var(--bg); color: var(--text); margin: 0; display: flex; flex-direction: column; height: 100dvh; overflow: hidden; }
         
-        .header { background: #09090b; padding: env(safe-area-inset-top, 20px) 20px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); }
-        .logo-text { font-weight: 800; font-size: 20px; letter-spacing: -1px; background: linear-gradient(to right, #6366f1, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        /* Header */
+        .header { background: var(--surface); padding: env(safe-area-inset-top, 15px) 20px 10px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); }
+        .logo { font-weight: 800; font-size: 18px; color: var(--accent); }
         
-        .screen { flex: 1; display: none; flex-direction: column; overflow-y: auto; padding-bottom: 120px; }
+        /* Screens */
+        .screen { flex: 1; display: none; flex-direction: column; overflow-y: auto; }
         .screen.active { display: flex; }
         
-        .chat-area { padding: 20px; display: flex; flex-direction: column; gap: 24px; max-width: 700px; margin: 0 auto; width: 100%; }
-        .msg-wrap { display: flex; gap: 12px; }
+        /* Chat Area */
+        .chat-area { flex: 1; padding: 20px; display: flex; flex-direction: column; gap: 16px; max-width: 600px; margin: 0 auto; width: 100%; }
+        .msg-wrap { display: flex; gap: 10px; align-items: flex-end; }
         .msg-wrap.user { flex-direction: row-reverse; }
-        .avatar { width: 36px; height: 36px; border-radius: 12px; background: var(--surface); display: flex; align-items: center; justify-content: center; border: 1px solid var(--border); }
-        .bot-img { width: 100%; height: 100%; object-fit: cover; border-radius: 12px; }
+        .avatar { width: 32px; height: 32px; border-radius: 8px; overflow: hidden; background: #e2e8f0; }
+        .bot-img { width: 100%; height: 100%; object-fit: cover; }
+        .msg { padding: 12px 16px; border-radius: 16px; font-size: 15px; line-height: 1.5; max-width: 75%; }
+        .msg.bot { background: var(--bubble-bot); color: var(--text); border-bottom-left-radius: 4px; }
+        .msg.user { background: var(--bubble-user); color: #fff; border-bottom-right-radius: 4px; }
         
-        .msg { padding: 16px 20px; border-radius: var(--radius); font-size: 16px; line-height: 1.6; max-width: 80%; }
-        .msg.bot { background: var(--surface); border-top-left-radius: 4px; border: 1px solid var(--border); }
-        .msg.user { background: var(--accent); color: white; border-top-right-radius: 4px; }
-        
-        .input-container { position: fixed; bottom: 0; width: 100%; padding: 15px; background: linear-gradient(to top, var(--bg) 90%, transparent); display: flex; justify-content: center; }
-        .input-box { width: 100%; max-width: 700px; display: flex; background: var(--surface); border-radius: 20px; padding: 6px; border: 1px solid var(--border); }
-        input { flex: 1; border: none; background: transparent; color: white; padding: 12px 15px; font-size: 16px; outline: none; }
-        .send-btn { background: var(--accent); color: white; border: none; width: 40px; height: 40px; border-radius: 16px; cursor: pointer; }
+        /* Input Area */
+        .input-area { background: var(--surface); padding: 10px 15px; display: flex; gap: 10px; align-items: center; border-top: 1px solid var(--border); padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px)); }
+        input { flex: 1; padding: 12px 16px; border-radius: 12px; border: 1px solid var(--border); background: var(--bg); color: var(--text); outline: none; font-size: 15px; }
+        .send-btn { background: var(--accent); color: white; border: none; width: 42px; height: 42px; border-radius: 12px; cursor: pointer; }
 
-        .nav-bar { position: fixed; bottom: 0; left: 0; width: 100%; height: 60px; background: #000; display: flex; justify-content: space-around; border-top: 1px solid var(--border); padding-bottom: env(safe-area-inset-bottom); }
-        .nav-item { color: var(--secondary); font-size: 10px; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; display: flex; flex-direction: column; align-items: center; padding-top: 10px; }
+        /* Nav Bar */
+        .nav-bar { background: var(--surface); display: flex; justify-content: space-around; border-top: 1px solid var(--border); padding: 10px 0 env(safe-area-inset-bottom, 10px); }
+        .nav-item { color: #64748b; font-size: 12px; font-weight: 600; cursor: pointer; padding: 5px 15px; }
         .nav-item.active { color: var(--accent); }
-        
-        .card { background: var(--surface); padding: 25px; border-radius: 20px; margin: 15px; border: 1px solid var(--border); }
+
+        /* About & Cards */
+        .card { background: var(--surface); border: 1px solid var(--border); padding: 20px; border-radius: 16px; margin: 20px; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <span class="logo-text">GMONE</span>
-        <button onclick="clearChat()" style="background:none; border:none; color:var(--secondary);">CLEAR</button>
+        <span class="logo">GmOne</span>
+        <button onclick="clearChat()" style="background:none; border:none; color:var(--text); cursor:pointer;">Очистить</button>
     </div>
 
     <div id="chat-screen" class="screen active">
         <div class="chat-area" id="chat"></div>
-        <div style="height: 100px;"></div> <!-- Отступ для скролла -->
+        <div style="height: 60px;"></div>
     </div>
 
     <div id="about-screen" class="screen">
         <div class="card">
-            <h2>GmOne</h2>
-            <p>Версия 0.6</p>
-            <div class="dev-badge" style="background: var(--accent); color: white; display: inline-block; padding: 5px 15px; border-radius: 10px;">PRO MODE</div>
+            <h2 style="margin-top:0">GmOne</h2>
+            <p>Профессиональный ассистент для анализа данных, вычислений и поиска знаний.</p>
+            <div style="font-size: 14px; color: var(--text); padding-top: 10px;">
+                <strong>Разработка:</strong> Tegcompany<br>
+                <strong>Основатель:</strong> Артём Юркевич
+            </div>
         </div>
     </div>
 
-    <div class="input-container">
-        <div class="input-box">
-            <input type="text" id="userInput" placeholder="Введите запрос..." onkeypress="handleKeyPress(event)">
-            <button class="send-btn" onclick="sendMessage()">➤</button>
-        </div>
+    <div class="input-area">
+        <input type="text" id="userInput" placeholder="Ваш запрос..." onkeypress="handleKeyPress(event)">
+        <button class="send-btn" onclick="sendMessage()">➤</button>
     </div>
 
     <div class="nav-bar">
@@ -77,50 +81,37 @@
     <script>
         const BOT_LOGO_URL = "logo.png";
         
-        // --- КОГНИТИВНЫЙ ДВИЖОК ---
-        const GmOneMind = {
+        // --- МОЗГ ИИ ---
+        const Brain = {
             memory: { lastEntity: null },
-            
             async process(input) {
                 let msg = input.toLowerCase().trim();
+                if (/(привет|старт|хай)/.test(msg)) return "Привет! Чем я могу помочь сегодня?";
+                if (/(он|она|ему|ней|его|её)/.test(msg) && this.memory.lastEntity) msg = msg.replace(/(он|она|ему|ней|его|её)/g, this.memory.lastEntity);
                 
-                // Эмоциональный блок
-                if (/(привет|старт|хай)/.test(msg)) return "Системы активированы. Я готов к анализу. Какой вопрос?";
-                
-                // Контекстный блок (Память)
-                if (/(он|она|ему|ней|его|её)/.test(msg) && this.memory.lastEntity) {
-                    msg = msg.replace(/(он|она|ему|ней|его|её)/g, this.memory.lastEntity);
-                }
-
-                // Интеллектуальный роутер
-                if (/(кто такой|что такое|расскажи про|инфо)\s+(.+)/.test(msg)) {
-                    let q = msg.match(/(кто такой|что такое|расскажи про|инфо)\s+(.+)/)[2];
+                if (/(кто такой|что такое|расскажи про)\s+(.+)/.test(msg)) {
+                    let q = msg.match(/(кто такой|что такое|расскажи про)\s+(.+)/)[2];
                     this.memory.lastEntity = q;
                     return await this.wiki(q);
                 }
-
-                if (msg.includes("погода")) return await this.weather(msg.split("погода").pop().trim() || "Москва");
                 
-                if (/[\d+*/-]{3,}/.test(msg)) {
-                    try { return "🧮 " + eval(msg.replace(/[^0-9+\-*/().]/g, '')); } catch { return "Ошибка вычисления"; }
-                }
-
-                return "Запрос принят. Однако, я не нашел прямого соответствия в базе данных. Попробуй переформулировать или задать другой вопрос.";
+                if (msg.includes("погода")) return await this.weather(msg.split("погода").pop().trim() || "Москва");
+                if (/[\d+*/-]{3,}/.test(msg)) try { return "🧮 " + eval(msg.replace(/[^0-9+\-*/().]/g, '')); } catch { return "Ошибка вычисления."; }
+                
+                return "Я готов помочь. Спроси меня про погоду, курс крипты или напиши термин для поиска.";
             },
-
             async wiki(q) {
                 try {
                     let d = await (await fetch(`https://ru.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(q)}`)).json();
-                    return d.extract ? `**${d.title}**\n\n${d.extract}` : null;
-                } catch { return null; }
+                    return d.extract ? `**${d.title}**\n\n${d.extract}` : "Информация не найдена.";
+                } catch { return "Ошибка сети."; }
             },
-
             async weather(c) {
                 try {
                     let g = await (await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${c}&count=1`)).json();
                     let w = (await (await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${g.results[0].latitude}&longitude=${g.results[0].longitude}&current_weather=true`)).json()).current_weather;
-                    return `🌤 Погода в **${g.results[0].name}**: ${w.temperature}°C, ветер ${w.windspeed} км/ч.`;
-                } catch { return "Ошибка получения погоды."; }
+                    return `🌤 В **${g.results[0].name}**: ${w.temperature}°C, ветер ${w.windspeed} км/ч.`;
+                } catch { return "Ошибка получения."; }
             }
         };
 
@@ -130,9 +121,9 @@
             if(!input.value) return;
             let val = input.value;
             input.value = '';
-            
             appendMsg(val, 'user');
-            let res = await GmOneMind.process(val);
+            
+            let res = await Brain.process(val);
             appendMsg(res, 'bot');
         }
 
@@ -152,7 +143,7 @@
             el.classList.add('active');
         }
 
-        function clearChat() { location.reload(); }
+        function clearChat() { localStorage.clear(); location.reload(); }
         function handleKeyPress(e) { if(e.key==='Enter') sendMessage(); }
     </script>
 </body>
