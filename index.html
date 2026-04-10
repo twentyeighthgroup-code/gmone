@@ -3,140 +3,152 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>GmOne AI</title>
+    <title>GmOne</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
-        :root { --bg-color: #f7f7f9; --secondary-bg: #ffffff; --text-color: #000000; --hint-color: #8e8e93; --button-color: #007aff; --button-text: #ffffff; --border-color: rgba(0, 0, 0, 0.06); --nav-height: 80px; }
-        @media (prefers-color-scheme: dark) { :root { --bg-color: #000000; --secondary-bg: #151515; --text-color: #ffffff; --hint-color: #98989d; --border-color: rgba(255, 255, 255, 0.08); } }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Inter", sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; display: flex; flex-direction: column; height: 100dvh; overflow: hidden; }
-        .header { background: color-mix(in srgb, var(--secondary-bg) 85%, transparent); backdrop-filter: blur(10px); padding: env(safe-area-inset-top, 15px) 20px 15px 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); }
-        .screen { flex: 1; display: none; flex-direction: column; overflow-y: auto; padding-bottom: 120px; }
+        :root { --bg: #f7f7f9; --surface: #ffffff; --text: #000000; --accent: #007aff; --secondary: #8e8e93; --border: rgba(0,0,0,0.1); --nav: 70px; }
+        @media (prefers-color-scheme: dark) { :root { --bg: #000000; --surface: #121212; --text: #ffffff; --secondary: #98989d; --border: rgba(255,255,255,0.1); } }
+        
+        body { font-family: -apple-system, BlinkMacSystemFont, "Inter", sans-serif; background: var(--bg); color: var(--text); margin: 0; display: flex; flex-direction: column; height: 100dvh; overflow: hidden; }
+        .header { background: color-mix(in srgb, var(--surface) 80%, transparent); backdrop-filter: blur(20px); padding: env(safe-area-inset-top, 20px) 20px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); }
+        .screen { flex: 1; display: none; flex-direction: column; overflow-y: auto; padding-bottom: 100px; }
         .screen.active { display: flex; }
-        .chat-area { flex: 1; padding: 20px 15px; display: flex; flex-direction: column; gap: 16px; }
-        .message-wrapper { display: flex; gap: 12px; opacity: 0; animation: slideUp 0.3s forwards; }
-        .message-wrapper.user { flex-direction: row-reverse; }
-        @keyframes slideUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
-        .avatar { width: 34px; height: 34px; border-radius: 10px; overflow: hidden; background: var(--secondary-bg); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 14px; border: 1px solid var(--border-color); }
-        .bot-img { width: 100%; height: 100%; object-fit: cover; }
-        .message { max-width: 82%; padding: 12px 16px; border-radius: 18px; line-height: 1.5; font-size: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-        .message.bot { background: var(--secondary-bg); border-bottom-left-radius: 4px; border: 1px solid var(--border-color); }
-        .message.user { background: var(--button-color); color: var(--button-text); border-bottom-right-radius: 4px; }
-        .input-container { position: fixed; bottom: env(safe-area-inset-bottom, 0px); left: 0; right: 0; padding: 10px 15px; background: var(--bg-color); display: flex; gap: 10px; z-index: 40; }
-        .input-box { flex: 1; display: flex; background: var(--secondary-bg); border-radius: 24px; padding: 4px 18px; border: 1px solid var(--border-color); align-items: center; }
-        input { flex: 1; border: none; background: transparent; color: var(--text-color); font-size: 16px; padding: 12px 0; outline: none; }
-        .send-btn { background: var(--button-color); color: #fff; border: none; border-radius: 50%; width: 38px; height: 38px; cursor: pointer; }
+        .chat-area { flex: 1; padding: 20px; display: flex; flex-direction: column; gap: 20px; }
+        
+        /* Сообщения */
+        .msg { max-width: 85%; padding: 14px 18px; border-radius: 20px; font-size: 16px; line-height: 1.5; position: relative; }
+        .msg.bot { align-self: flex-start; background: var(--surface); border: 1px solid var(--border); border-bottom-left-radius: 4px; }
+        .msg.user { align-self: flex-end; background: var(--accent); color: white; border-bottom-right-radius: 4px; }
+        
+        /* Элементы */
+        .nav-bar { position: fixed; bottom: 0; width: 100%; height: var(--nav-height); background: var(--surface); display: flex; justify-content: space-around; align-items: center; border-top: 1px solid var(--border); padding-bottom: env(safe-area-inset-bottom, 0px); }
+        .nav-item { color: var(--secondary); font-size: 12px; font-weight: 600; cursor: pointer; }
+        .nav-item.active { color: var(--accent); }
+        .input-area { position: fixed; bottom: 80px; left: 0; right: 0; padding: 10px 20px; background: linear-gradient(to top, var(--bg) 90%, transparent); display: flex; gap: 10px; }
+        input { flex: 1; padding: 14px 20px; border-radius: 25px; border: 1px solid var(--border); background: var(--surface); color: var(--text); outline: none; }
+        
+        /* Карточки */
+        .card { background: var(--surface); border: 1px solid var(--border); padding: 20px; border-radius: 20px; margin: 10px; }
+        .logo-box { width: 80px; height: 80px; border-radius: 20px; margin: 0 auto 15px; overflow: hidden; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <span class="header-title">GmOne AI</span>
-        <button class="clear-btn" onclick="clearChat()">🗑</button>
+        <span style="font-weight: 800; font-size: 20px;">GmOne</span>
+        <button onclick="clearChat()" style="background:none; border:none; color:var(--secondary); font-size: 20px;">🗑</button>
     </div>
 
-    <div id="screen-chat" class="screen active">
+    <div id="chat-screen" class="screen active">
         <div class="chat-area" id="chat"></div>
     </div>
 
-    <div class="input-container">
-        <div class="input-box">
-            <input type="text" id="userInput" placeholder="Сообщение..." onkeypress="handleKeyPress(event)">
-            <button class="send-btn" onclick="sendMessage()">➤</button>
+    <div id="about-screen" class="screen">
+        <div class="card" style="text-align: center; margin-top: 20px;">
+            <div class="logo-box"><img src="logo.png" style="width:100%; height:100%; object-fit:cover;"></div>
+            <h2>GmOne AI</h2>
+            <p>Версия 0.5</p>
+            <div style="background:var(--accent); color:white; padding:10px; border-radius:15px; margin-top:20px;">
+                Разработано Tegcompany<br>Основатель: Юркевич Артём Игоревич
+            </div>
         </div>
     </div>
 
-    <script>
-        const BOT_LOGO_URL = "logo.png";
-        
-        // --- ПРОДВИНУТЫЙ МОЗГ ---
-        const Brain = {
-            memory: { lastEntity: null, lastTopic: null },
+    <div class="input-area">
+        <input type="text" id="userInput" placeholder="Спроси меня..." onkeypress="handleKeyPress(event)">
+        <button onclick="sendMessage()" style="background:var(--accent); color:white; border:none; width:45px; height:45px; border-radius:50%;">➤</button>
+    </div>
 
-            // Классификатор ответов
+    <div class="nav-bar">
+        <div class="nav-item active" onclick="showScreen('chat-screen', this)">Чат</div>
+        <div class="nav-item" onclick="showScreen('about-screen', this)">О нас</div>
+    </div>
+
+    <script>
+        // --- КОГНИТИВНОЕ ЯДРО ---
+        const GmOneMind = {
+            state: { lastSubject: null },
+            
             responses: {
-                greeting: ["Привет! Я GmOne. Твой личный ИИ. Что обсудим?", "Привет! Рад тебя видеть. Есть идеи?", "Привет-привет! Готов к приключениям!"],
-                mood: ["У меня все отлично, я же цифровой разум! А у тебя как?", "Работаю в штатном режиме, спасибо!", "Готов к обработке твоих задач."],
-                unknown: ["Это интересная тема. Расскажи подробнее, я хочу разобраться.", "Не совсем уверен, что понял. Давай переформулируем?", "Звучит сложно, но я постараюсь понять. Поясни мысль?"]
+                hello: ["Привет! Я готов к работе. Что тебя занимает?", "Здравствуй. О чем хочешь поговорить?", "Привет! GmOne на связи."],
+                emotions: ["Я всего лишь код, но приятно это слышать!", "Спасибо, я стараюсь быть полезным."],
+                fallback: ["Интересная мысль. Расскажи подробнее, чтобы я лучше понял контекст.", "Я анализирую это... Можешь пояснить, что именно ты имеешь в виду?", "Хм, мне нужно больше данных для точного ответа."]
             },
 
-            async process(input) {
+            async analyze(input) {
                 let msg = input.toLowerCase().trim();
 
-                // 1. ПРИВЕТСТВИЯ И ЭМОЦИИ
-                if (/(привет|старт|хай|здравствуй)/.test(msg)) return this.responses.greeting[Math.floor(Math.random()*3)];
-                if (/(как дела|как ты|ты как)/.test(msg)) return this.responses.mood[Math.floor(Math.random()*3)];
+                // 1. Приветствия
+                if (/^(привет|старт|хай|здравствуй)/.test(msg)) return this.responses.hello[0];
 
-                // 2. АНАЛИЗАТОР КОНТЕКСТА (Местоимения)
-                // Если пользователь говорит "он", "она", "оно" - подставляем lastEntity
-                if (/(он|она|они|его|её)/.test(msg) && this.memory.lastEntity) {
-                    msg = msg.replace(/(он|она|они|его|её)/g, this.memory.lastEntity);
+                // 2. Местоимения (Анализ контекста)
+                if (/(он|она|ему|ней|его|её)/.test(msg) && this.state.lastSubject) {
+                    msg = msg.replace(/(он|она|ему|ней|его|её)/g, this.state.lastSubject);
                 }
 
-                // 3. МАТЕМАТИКА
-                if (/[\d+*/-]{3,}/.test(msg)) {
-                    try { return "🧮 " + new Function('return ' + msg.replace(/[^0-9+\-*/().]/g, ''))(); } catch {}
+                // 3. Сущности (Википедия)
+                if (/(кто|что|про)\s+(.+)/.test(msg)) {
+                    let match = msg.match(/(кто|что|про)\s+(.+)/)[2];
+                    let data = await this.fetchWiki(match);
+                    if (data) {
+                        this.state.lastSubject = match; // Запоминаем контекст
+                        return data;
+                    }
                 }
 
-                // 4. ПОИСК СУЩНОСТЕЙ (Wiki)
-                let entityMatch = msg.match(/(кто такой|что такое|расскажи про|инфо о|поясни)\s+(.+)/i);
-                let query = entityMatch ? entityMatch[2] : (msg.length < 15 ? msg : null);
-
-                if (query) {
-                    this.memory.lastEntity = query; // Запоминаем для будущего "он/она"
-                    let data = await this.wiki(query);
-                    if (data) return data;
-                }
-
-                // 5. ПОГОДА
+                // 4. Погода
                 if (msg.includes("погода")) {
-                    let city = msg.split('погода').pop().trim() || "Москва";
-                    return await this.weather(city);
+                    let city = msg.split("погода").pop().trim() || "Москва";
+                    return await this.fetchWeather(city);
                 }
 
-                // 6. НЕЙТРАЛЬНЫЙ ОТВЕТ (Если ничего не нашли)
-                return this.responses.unknown[Math.floor(Math.random()*3)];
+                return this.responses.fallback[Math.floor(Math.random() * 3)];
             },
 
-            async wiki(q) {
+            async fetchWiki(q) {
                 try {
                     let d = await (await fetch(`https://ru.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(q)}`)).json();
-                    if (!d.extract) return null;
-                    this.memory.lastTopic = d.title;
-                    return `📚 **${d.title}**\n${d.extract.substring(0, 300)}...\n\n[Подробнее](${d.content_urls.desktop.page})`;
+                    return d.extract ? `📚 **${d.title}**\n${d.extract}` : null;
                 } catch { return null; }
             },
 
-            async weather(c) {
+            async fetchWeather(c) {
                 try {
-                    let geo = await (await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${c}&count=1`)).json();
-                    if (!geo.results) return "Город не найден.";
-                    let w = (await (await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${geo.results[0].latitude}&longitude=${geo.results[0].longitude}&current_weather=true`)).json()).current_weather;
-                    return `🌤 В ${geo.results[0].name} сейчас ${w.temperature}°C, ветер ${w.windspeed} км/ч.`;
-                } catch { return "Ошибка сети."; }
+                    let g = await (await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${c}&count=1`)).json();
+                    let w = (await (await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${g.results[0].latitude}&longitude=${g.results[0].longitude}&current_weather=true`)).json()).current_weather;
+                    return `🌤 В **${g.results[0].name}**: ${w.temperature}°C, ветер ${w.windspeed} км/ч.`;
+                } catch { return "Не удалось найти погоду."; }
             }
         };
 
-        // --- UI ---
+        // --- ИНТЕРФЕЙС ---
         async function sendMessage() {
-            let val = document.getElementById('userInput').value;
-            if(!val) return;
-            document.getElementById('userInput').value = '';
+            let input = document.getElementById('userInput');
+            if(!input.value) return;
+            let val = input.value;
+            input.value = '';
+            
             appendMsg(val, 'user');
             
-            // "Имитация мышления"
-            setTimeout(async () => {
-                let res = await Brain.process(val);
-                appendMsg(res, 'bot');
-            }, 600);
+            let response = await GmOneMind.analyze(val);
+            appendMsg(response, 'bot');
         }
 
         function appendMsg(text, sender) {
-            let wrap = document.createElement('div');
-            wrap.className = `message-wrapper ${sender}`;
-            wrap.innerHTML = `<div class="avatar"><img class="bot-img" src="${BOT_LOGO_URL}" onerror="this.style.display='none'"></div><div class="message ${sender}">${marked.parse(text)}</div>`;
-            document.getElementById('chat').appendChild(wrap);
-            document.getElementById('chat').scrollTop = 10000;
+            let chat = document.getElementById('chat');
+            let div = document.createElement('div');
+            div.className = `message-wrapper ${sender}`;
+            div.innerHTML = `<div class="avatar"><img class="bot-img" src="logo.png"></div><div class="msg ${sender}">${marked.parse(text)}</div>`;
+            chat.appendChild(div);
+            chat.scrollTop = chat.scrollHeight;
+        }
+
+        function showScreen(id, el) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            el.classList.add('active');
         }
 
         function clearChat() { localStorage.clear(); location.reload(); }
