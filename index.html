@@ -7,42 +7,34 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
-        :root { 
-            --bg: #f8fafc; --surface: #ffffff; --text: #1e293b; --accent: #2563eb; 
-            --bubble-bot: #f1f5f9; --bubble-user: #2563eb; --border: #e2e8f0;
-        }
+        :root { --bg: #f8fafc; --surface: #ffffff; --text: #1e293b; --accent: #2563eb; --bubble-bot: #f1f5f9; --bubble-user: #2563eb; --border: #e2e8f0; --nav: 70px; }
         body { font-family: -apple-system, BlinkMacSystemFont, "Inter", sans-serif; background: var(--bg); color: var(--text); margin: 0; display: flex; flex-direction: column; height: 100dvh; overflow: hidden; }
         
-        /* Header */
-        .header { background: var(--surface); padding: env(safe-area-inset-top, 15px) 20px 10px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); }
+        .header { background: var(--surface); padding: env(safe-area-inset-top, 15px) 20px 10px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); z-index: 10; }
         .logo { font-weight: 800; font-size: 18px; color: var(--accent); }
         
-        /* Screens */
-        .screen { flex: 1; display: none; flex-direction: column; overflow-y: auto; }
+        .screen { flex: 1; display: none; flex-direction: column; overflow-y: auto; padding-bottom: 100px; }
         .screen.active { display: flex; }
         
-        /* Chat Area */
         .chat-area { flex: 1; padding: 20px; display: flex; flex-direction: column; gap: 16px; max-width: 600px; margin: 0 auto; width: 100%; }
-        .msg-wrap { display: flex; gap: 10px; align-items: flex-end; }
+        .msg-wrap { display: flex; gap: 10px; align-items: flex-end; animation: slideUp 0.3s ease; }
         .msg-wrap.user { flex-direction: row-reverse; }
-        .avatar { width: 32px; height: 32px; border-radius: 8px; overflow: hidden; background: #e2e8f0; }
+        .avatar { width: 32px; height: 32px; border-radius: 8px; overflow: hidden; background: #e2e8f0; flex-shrink: 0; }
         .bot-img { width: 100%; height: 100%; object-fit: cover; }
         .msg { padding: 12px 16px; border-radius: 16px; font-size: 15px; line-height: 1.5; max-width: 75%; }
-        .msg.bot { background: var(--bubble-bot); color: var(--text); border-bottom-left-radius: 4px; }
+        .msg.bot { background: var(--bubble-bot); border-bottom-left-radius: 4px; }
         .msg.user { background: var(--bubble-user); color: #fff; border-bottom-right-radius: 4px; }
         
-        /* Input Area */
-        .input-area { background: var(--surface); padding: 10px 15px; display: flex; gap: 10px; align-items: center; border-top: 1px solid var(--border); padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px)); }
-        input { flex: 1; padding: 12px 16px; border-radius: 12px; border: 1px solid var(--border); background: var(--bg); color: var(--text); outline: none; font-size: 15px; }
+        .input-area { position: fixed; bottom: var(--nav); left: 0; right: 0; padding: 10px 15px; background: var(--bg); display: flex; gap: 10px; align-items: center; border-top: 1px solid var(--border); padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px)); }
+        input { flex: 1; padding: 12px 16px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface); color: var(--text); outline: none; font-size: 15px; }
         .send-btn { background: var(--accent); color: white; border: none; width: 42px; height: 42px; border-radius: 12px; cursor: pointer; }
 
-        /* Nav Bar */
-        .nav-bar { background: var(--surface); display: flex; justify-content: space-around; border-top: 1px solid var(--border); padding: 10px 0 env(safe-area-inset-bottom, 10px); }
-        .nav-item { color: #64748b; font-size: 12px; font-weight: 600; cursor: pointer; padding: 5px 15px; }
+        .nav-bar { position: fixed; bottom: 0; width: 100%; height: var(--nav); background: var(--surface); display: flex; justify-content: space-around; border-top: 1px solid var(--border); padding-bottom: env(safe-area-inset-bottom, 0px); z-index: 20; }
+        .nav-item { color: #64748b; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; flex-direction: column; justify-content: center; align-items: center; flex: 1; }
         .nav-item.active { color: var(--accent); }
-
-        /* About & Cards */
-        .card { background: var(--surface); border: 1px solid var(--border); padding: 20px; border-radius: 16px; margin: 20px; }
+        
+        .card { background: var(--surface); border: 1px solid var(--border); padding: 24px; border-radius: 16px; margin: 20px auto; max-width: 500px; text-align: center; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
@@ -52,23 +44,26 @@
         <button onclick="clearChat()" style="background:none; border:none; color:var(--text); cursor:pointer;">Очистить</button>
     </div>
 
+    <!-- ЧАТ -->
     <div id="chat-screen" class="screen active">
         <div class="chat-area" id="chat"></div>
-        <div style="height: 60px;"></div>
     </div>
 
+    <!-- О НАС -->
     <div id="about-screen" class="screen">
         <div class="card">
-            <h2 style="margin-top:0">GmOne</h2>
-            <p>Профессиональный ассистент для анализа данных, вычислений и поиска знаний.</p>
-            <div style="font-size: 14px; color: var(--text); padding-top: 10px;">
+            <div class="avatar" style="width:80px; height:80px; margin:0 auto 15px;"><img src="logo.png" class="bot-img"></div>
+            <h2 style="margin:0">GmOne</h2>
+            <p style="color:var(--secondary)">ИИ-ассистент</p>
+            <div style="text-align:left; margin-top:20px; font-size: 14px; line-height: 1.6;">
                 <strong>Разработка:</strong> Tegcompany<br>
-                <strong>Основатель:</strong> Артём Юркевич
+                <strong>Основатель:</strong> Артём Юркевич<br><br>
+                Start Smart.
             </div>
         </div>
     </div>
 
-    <div class="input-area">
+    <div class="input-area" id="inputZone">
         <input type="text" id="userInput" placeholder="Ваш запрос..." onkeypress="handleKeyPress(event)">
         <button class="send-btn" onclick="sendMessage()">➤</button>
     </div>
@@ -80,30 +75,25 @@
 
     <script>
         const BOT_LOGO_URL = "logo.png";
-        
-        // --- МОЗГ ИИ ---
         const Brain = {
             memory: { lastEntity: null },
             async process(input) {
                 let msg = input.toLowerCase().trim();
                 if (/(привет|старт|хай)/.test(msg)) return "Привет! Чем я могу помочь сегодня?";
                 if (/(он|она|ему|ней|его|её)/.test(msg) && this.memory.lastEntity) msg = msg.replace(/(он|она|ему|ней|его|её)/g, this.memory.lastEntity);
-                
                 if (/(кто такой|что такое|расскажи про)\s+(.+)/.test(msg)) {
                     let q = msg.match(/(кто такой|что такое|расскажи про)\s+(.+)/)[2];
                     this.memory.lastEntity = q;
                     return await this.wiki(q);
                 }
-                
                 if (msg.includes("погода")) return await this.weather(msg.split("погода").pop().trim() || "Москва");
-                if (/[\d+*/-]{3,}/.test(msg)) try { return "🧮 " + eval(msg.replace(/[^0-9+\-*/().]/g, '')); } catch { return "Ошибка вычисления."; }
-                
-                return "Я готов помочь. Спроси меня про погоду, курс крипты или напиши термин для поиска.";
+                if (/[\d+*/-]{3,}/.test(msg)) try { return "🧮 " + eval(msg.replace(/[^0-9+\-*/().]/g, '')); } catch { return "Ошибка."; }
+                return "GmOne на связи. Задавай любой вопрос или проси найти информацию.";
             },
             async wiki(q) {
                 try {
                     let d = await (await fetch(`https://ru.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(q)}`)).json();
-                    return d.extract ? `**${d.title}**\n\n${d.extract}` : "Информация не найдена.";
+                    return d.extract ? `**${d.title}**\n\n${d.extract.substring(0, 300)}...` : "Не нашел информации.";
                 } catch { return "Ошибка сети."; }
             },
             async weather(c) {
@@ -111,18 +101,16 @@
                     let g = await (await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${c}&count=1`)).json();
                     let w = (await (await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${g.results[0].latitude}&longitude=${g.results[0].longitude}&current_weather=true`)).json()).current_weather;
                     return `🌤 В **${g.results[0].name}**: ${w.temperature}°C, ветер ${w.windspeed} км/ч.`;
-                } catch { return "Ошибка получения."; }
+                } catch { return "Город не найден."; }
             }
         };
 
-        // --- UI ---
         async function sendMessage() {
             let input = document.getElementById('userInput');
             if(!input.value) return;
             let val = input.value;
             input.value = '';
             appendMsg(val, 'user');
-            
             let res = await Brain.process(val);
             appendMsg(res, 'bot');
         }
@@ -141,9 +129,12 @@
             document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
             document.getElementById(id).classList.add('active');
             el.classList.add('active');
+            // Прячем ввод в разделе "О нас"
+            document.getElementById('inputZone')?.style.display = (id === 'about-screen') ? 'none' : 'flex';
+            document.getElementById('inputZone').style.display = (id === 'about-screen') ? 'none' : 'flex';
         }
 
-        function clearChat() { localStorage.clear(); location.reload(); }
+        function clearChat() { location.reload(); }
         function handleKeyPress(e) { if(e.key==='Enter') sendMessage(); }
     </script>
 </body>
