@@ -13,8 +13,9 @@
         body { font-family: -apple-system, BlinkMacSystemFont, "Inter", sans-serif; background: var(--bg); color: var(--text); margin: 0; display: flex; flex-direction: column; height: 100dvh; overflow: hidden; }
         
         .header { background: var(--surface); padding: env(safe-area-inset-top, 15px) 20px 10px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); z-index: 100; }
-        .logo { font-weight: 800; font-size: 18px; color: var(--accent); }
-        
+        .logo { font-weight: 800; font-size: 18px; color: var(--accent); display: flex; align-items: center; gap: 6px; }
+        .logo::after { content: "🧠"; font-size: 20px; }
+
         .screen { flex: 1; display: none; flex-direction: column; overflow-y: auto; padding-bottom: 120px; }
         .screen.active { display: flex; }
         
@@ -25,13 +26,13 @@
         .avatar { width: 32px; height: 32px; border-radius: 8px; overflow: hidden; background: #e2e8f0; flex-shrink: 0; }
         .bot-img { width: 100%; height: 100%; object-fit: cover; }
         
-        .msg { padding: 12px 16px; border-radius: 16px; font-size: 15px; line-height: 1.5; max-width: 75%; }
+        .msg { padding: 12px 16px; border-radius: 16px; font-size: 15px; line-height: 1.5; max-width: 75%; position: relative; }
         .msg.bot { background: var(--bubble-bot); border-bottom-left-radius: 4px; border: 1px solid var(--border); }
         .msg.user { background: var(--bubble-user); color: #fff; border-bottom-right-radius: 4px; }
         
         .input-area { position: fixed; bottom: var(--nav); left: 0; right: 0; padding: 10px 15px; background: var(--bg); display: flex; gap: 10px; align-items: center; border-top: 1px solid var(--border); padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px)); z-index: 90; }
         input { flex: 1; padding: 12px 16px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface); color: var(--text); outline: none; font-size: 15px; }
-        .send-btn { background: var(--accent); color: white; border: none; width: 42px; height: 42px; border-radius: 12px; cursor: pointer; }
+        .send-btn { background: var(--accent); color: white; border: none; width: 42px; height: 42px; border-radius: 12px; cursor: pointer; font-size: 18px; }
 
         .nav-bar { position: fixed; bottom: 0; width: 100%; height: var(--nav); background: var(--surface); display: flex; justify-content: space-around; border-top: 1px solid var(--border); padding-bottom: env(safe-area-inset-bottom, 0px); z-index: 100; }
         .nav-item { color: #64748b; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; flex-direction: column; justify-content: center; align-items: center; flex: 1; transition: 0.2s; }
@@ -39,13 +40,17 @@
         
         .card { background: var(--surface); border: 1px solid var(--border); padding: 24px; border-radius: 16px; margin: 20px auto; max-width: 500px; text-align: center; }
         @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .thinking { font-size: 13px; color: #64748b; padding: 8px 16px; font-style: italic; }
     </style>
 </head>
 <body>
 
     <div class="header">
         <span class="logo">GmOne</span>
-        <button onclick="clearChat()" style="background:none; border:none; color:var(--text); cursor:pointer;">Очистить</button>
+        <button onclick="clearChat()" style="background:none; border:none; color:var(--text); cursor:pointer; display:flex; align-items:center; gap:4px;">
+            <span>Очистить чат</span>
+        </button>
     </div>
 
     <!-- ЧАТ -->
@@ -57,18 +62,23 @@
     <div id="about-screen" class="screen">
         <div class="card">
             <div class="avatar" style="width:80px; height:80px; margin:0 auto 15px;"><img src="logo.png" class="bot-img"></div>
-            <h2 style="margin:0">GmOne</h2>
-            <p style="color:var(--secondary)">ИИ-ассистент</p>
+            <h2 style="margin:0">GmOne v0.7</h2>
+            <p style="color:var(--accent); font-weight:600;">Умный ИИ с прокачанным мозгом 🧠</p>
             <div style="text-align:left; margin-top:20px; font-size: 14px; line-height: 1.6;">
                 <strong>Разработка:</strong> Tegcompany<br>
                 <strong>Основатель:</strong> Артём Юркевич<br><br>
-                 Start Smart.
+                <strong>Что нового:</strong><br>
+                • Полноценная память контекста<br>
+                • Улучшенное разрешение местоимений<br>
+                • Новые инструменты (время, валюта, шутки)<br>
+                • Более умные ответы и логика<br>
+                <strong>Start Smart.</strong>
             </div>
         </div>
     </div>
 
     <div class="input-area" id="inputContainer">
-        <input type="text" id="userInput" placeholder="Ваш запрос..." onkeypress="handleKeyPress(event)">
+        <input type="text" id="userInput" placeholder="Спроси меня о чём угодно..." onkeypress="handleKeyPress(event)">
         <button class="send-btn" onclick="sendMessage()">➤</button>
     </div>
 
@@ -80,53 +90,241 @@
     <script>
         const BOT_LOGO_URL = "logo.png";
         
-        // --- МОЗГ ---
+        
         const Brain = {
-            memory: { lastEntity: null },
-            async process(input) {
-                let msg = input.toLowerCase().trim();
-                if (/(привет|старт|хай)/.test(msg)) return "Привет! Чем я могу помочь сегодня?";
-                if (/(он|она|ему|ней|его|её)/.test(msg) && this.memory.lastEntity) msg = msg.replace(/(он|она|ему|ней|его|её)/g, this.memory.lastEntity);
-                if (/(кто такой|что такое|расскажи про)\s+(.+)/.test(msg)) {
-                    let q = msg.match(/(кто такой|что такое|расскажи про)\s+(.+)/)[2];
-                    this.memory.lastEntity = q;
-                    return await this.wiki(q);
-                }
-                if (msg.includes("погода")) return await this.weather(msg.split("погода").pop().trim() || "Москва");
-                if (/[\d+*/-]{3,}/.test(msg)) try { return "🧮 " + eval(msg.replace(/[^0-9+\-*/().]/g, '')); } catch { return "Ошибка."; }
-                return "GmOne на связи. Задавай вопрос или проси найти информацию.";
+            history: [],           
+            memory: { 
+                lastEntity: null,
+                entities: {},      
+                userCity: "Минск"  
             },
+
+            
+            async process(input) {
+                const originalInput = input.trim();
+                let msg = originalInput.toLowerCase();
+
+                
+                this.history.push({ role: "user", content: originalInput });
+                if (this.history.length > 15) this.history.shift(); 
+
+                
+                if (/(привет|здравствуй|хай|hello|доброе|добрый|доброго)/.test(msg)) {
+                    const greeting = "Привет! 👋 Я GmOne — теперь с настоящим мозгом. Чем сегодня будем умничать?";
+                    this.history.push({ role: "bot", content: greeting });
+                    return greeting;
+                }
+
+                
+                let processed = originalInput;
+                if (this.memory.lastEntity && /(он|она|ему|ей|его|её|это|этот|эта|это|им)/.test(msg)) {
+                    processed = processed.replace(/(он|она|ему|ей|его|её|это|этот|эта|им)/gi, this.memory.lastEntity);
+                }
+
+                
+                
+                if (/(кто такой|кто такая|что такое|расскажи про|инфа о|информация о|что за|кто это)/.test(msg)) {
+                    let q = processed.match(/(кто такой|кто такая|что такое|расскажи про|инфа о|информация о|что за|кто это)\s+(.+?)(?:\?|$)/i);
+                    if (q) {
+                        q = q[2].trim();
+                        this.memory.lastEntity = q;
+                        this.memory.entities[q] = true;
+                        const res = await this.wiki(q);
+                        this.history.push({ role: "bot", content: res });
+                        return res;
+                    }
+                }
+
+                
+                if (msg.includes("погода") || msg.includes("weather") || msg.includes("температура")) {
+                    let city = msg.replace(/погода|в|на|какая|какой|погоду|температура/g, "").trim() || this.memory.userCity;
+                    const res = await this.weather(city);
+                    this.history.push({ role: "bot", content: res });
+                    return res;
+                }
+
+                
+                if (/(время|сколько времени|который час|time|дата|сегодня)/.test(msg)) {
+                    const res = this.getTime();
+                    this.history.push({ role: "bot", content: res });
+                    return res;
+                }
+
+                
+                if (/(шутка|анекдот|рассмеши|пошути|юмор|смешно)/.test(msg)) {
+                    const res = this.getJoke();
+                    this.history.push({ role: "bot", content: res });
+                    return res;
+                }
+
+                
+                if (/(курс|валюта|конверт|сколько стоит|usd|eur|rub|byn|доллар|евро|рубль|белрубль)/.test(msg)) {
+                    const res = await this.currency(processed);
+                    if (res !== "Не понял валюту") {
+                        this.history.push({ role: "bot", content: res });
+                        return res;
+                    }
+                }
+
+                
+                if (/[\d+*/\-().%]+/.test(msg) && !msg.includes("погода")) {
+                    try {
+                        
+                        const sanitized = msg.replace(/[^0-9+\-*/().% ]/g, "");
+                        const result = new Function(`return ${sanitized}`)();
+                        const res = `🧮 **Результат:** ${result}`;
+                        this.history.push({ role: "bot", content: res });
+                        return res;
+                    } catch (e) {}
+                }
+
+                
+                if (/(что ты умеешь|возможности|команды|help|помощь)/.test(msg)) {
+                    const help = `Я теперь гораздо умнее! 🧠\n\n` +
+                                 `✅ Погода в любом городе\n` +
+                                 `✅ Википедия (кто такой / что такое)\n` +
+                                 `✅ Конвертер валют в реальном времени\n` +
+                                 `✅ Точное время и дата\n` +
+                                 `✅ Калькулятор\n` +
+                                 `✅ Шутки и анекдоты\n` +
+                                 `✅ Память контекста и местоимений\n\n` +
+                                 `Просто пиши как человеку — я пойму!`;
+                    this.history.push({ role: "bot", content: help });
+                    return help;
+                }
+
+                
+                const fallback = "Я запомнил твой запрос. Если нужно, уточни — я могу искать информацию, считать, показывать погоду, курсы валют или просто пошутить. Что именно тебе нужно?";
+                this.history.push({ role: "bot", content: fallback });
+                return fallback;
+            },
+
+            
             async wiki(q) {
                 try {
-                    let d = await (await fetch(`https://ru.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(q)}`)).json();
-                    return d.extract ? `**${d.title}**\n\n${d.extract.substring(0, 300)}...` : "Не нашел.";
-                } catch { return "Ошибка сети."; }
+                    const res = await fetch(`https://ru.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(q)}`);
+                    const data = await res.json();
+                    if (data.extract) {
+                        return `**${data.title}**\n\n${data.extract.substring(0, 380)}... \n\n[Подробнее на Википедии](${data.content_urls.desktop.page})`;
+                    }
+                    return "Не нашёл в Википедии, но запомнил, что ты спрашивал об этом.";
+                } catch {
+                    return "Ошибка соединения с Википедией 😔";
+                }
             },
-            async weather(c) {
+
+            async weather(city) {
                 try {
-                    let g = await (await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${c}&count=1`)).json();
-                    let w = (await (await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${g.results[0].latitude}&longitude=${g.results[0].longitude}&current_weather=true`)).json()).current_weather;
-                    return `🌤 В **${g.results[0].name}**: ${w.temperature}°C, ветер ${w.windspeed} км/ч.`;
-                } catch { return "Город не найден."; }
+                    
+                    const geo = await (await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=ru`)).json();
+                    if (!geo.results) return "Город не найден. Попробуй написать точнее (например: Минск, Москва, Брест).";
+
+                    const lat = geo.results[0].latitude;
+                    const lon = geo.results[0].longitude;
+                    const name = geo.results[0].name;
+
+                    const weatherData = await (await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&timezone=Europe/Moscow`)).json();
+                    const w = weatherData.current_weather;
+
+                    return `🌤 **${name}** сейчас:\n` +
+                           `• Температура: **${w.temperature}°C**\n` +
+                           `• Ветер: **${w.windspeed} км/ч**\n` +
+                           `• Направление: ${w.winddirection}°`;
+                } catch {
+                    return "Не смог получить погоду. Проверь интернет или название города.";
+                }
+            },
+
+            getTime() {
+                const now = new Date();
+                const time = now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+                const date = now.toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' });
+                return `🕒 **Сейчас ${time}**\n📅 ${date}`;
+            },
+
+            getJoke() {
+                const jokes = [
+                    "Почему программисты путают Хэллоуин и Рождество? Потому что oct 31 == dec 25! 🎃",
+                    "— Сколько нужно ИИ, чтобы вкрутить лампочку?\n— Один. Но сначала он спросит у тебя 50 уточняющих вопросов.",
+                    "Я спросил у ИИ: «Ты меня любишь?» Он ответил: «Конечно! Как и всех остальных пользователей.» 💔",
+                    "— Почему у тебя такой хороший мозг?\n— Потому что ты меня только что улучшил! 🔥",
+                    "Встречаются два ИИ. Один говорит: «Как дела?» Второй: «0x1A4F...»"
+                ];
+                return jokes[Math.floor(Math.random() * jokes.length)];
+            },
+
+            async currency(query) {
+                
+                const match = query.toLowerCase().match(/(\d+)\s*([a-zа-яё]+)\s*(в|to|на|в|для)?\s*([a-zа-яё]+)?/);
+                if (!match) return "Не понял валюту. Пример: 100 usd в byn";
+
+                let amount = parseFloat(match[1]);
+                let fromRaw = match[2];
+                let toRaw = match[4] || "byn"; 
+
+                const map = {
+                    usd: "USD", доллар: "USD", долларов: "USD",
+                    eur: "EUR", евро: "EUR",
+                    rub: "RUB", рубль: "RUB", рублей: "RUB",
+                    byn: "BYN", белрубль: "BYN", "белорусский рубль": "BYN"
+                };
+
+                const from = map[fromRaw] || fromRaw.toUpperCase();
+                const to = map[toRaw] || toRaw.toUpperCase();
+
+                try {
+                    const resp = await fetch(`https://api.exchangerate.host/latest?base=${from}&symbols=${to}`);
+                    const data = await resp.json();
+                    if (data.rates && data.rates[to]) {
+                        const result = (amount * data.rates[to]).toFixed(2);
+                        return `💱 **${amount} ${from}** = **${result} ${to}**\n(курс обновлён только что)`;
+                    }
+                } catch (e) {}
+                return "Не смог получить актуальный курс валют 😔";
             }
         };
 
-        // --- UI ---
+        
         async function sendMessage() {
-            let input = document.getElementById('userInput');
-            if(!input.value) return;
-            let val = input.value;
-            input.value = '';
+            let inputEl = document.getElementById('userInput');
+            if (!inputEl.value.trim()) return;
+
+            let val = inputEl.value.trim();
+            inputEl.value = '';
+
             appendMsg(val, 'user');
+
+            
+            const thinkingId = 'thinking-' + Date.now();
+            const chat = document.getElementById('chat');
+            const thinkDiv = document.createElement('div');
+            thinkDiv.id = thinkingId;
+            thinkDiv.className = 'msg-wrap';
+            thinkDiv.innerHTML = `<div class="avatar"><img class="bot-img" src="${BOT_LOGO_URL}"></div><div class="msg bot thinking">🧠 GmOne думает...</div>`;
+            chat.appendChild(thinkDiv);
+            chat.scrollTop = chat.scrollHeight;
+
+            
             let res = await Brain.process(val);
-            setTimeout(() => appendMsg(res, 'bot'), 300);
+
+            
+            const thinkingElement = document.getElementById(thinkingId);
+            if (thinkingElement) thinkingElement.remove();
+
+            
+            setTimeout(() => appendMsg(res, 'bot'), 120);
         }
 
         function appendMsg(text, sender) {
             let chat = document.getElementById('chat');
             let div = document.createElement('div');
             div.className = `msg-wrap ${sender}`;
-            div.innerHTML = `<div class="avatar"><img class="bot-img" src="${BOT_LOGO_URL}" onerror="this.style.display='none'"></div><div class="msg ${sender}">${marked.parse(text)}</div>`;
+
+            const avatarHTML = sender === 'bot' 
+                ? `<div class="avatar"><img class="bot-img" src="${BOT_LOGO_URL}"></div>`
+                : `<div style="width:32px;height:32px;background:#64748b;color:white;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;">👤</div>`;
+
+            div.innerHTML = `${avatarHTML}<div class="msg ${sender}">${marked.parse(text)}</div>`;
             chat.appendChild(div);
             chat.scrollTop = chat.scrollHeight;
         }
@@ -136,12 +334,34 @@
             document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
             document.getElementById(id).classList.add('active');
             el.classList.add('active');
-            // Управление видимостью ввода
             document.getElementById('inputContainer').style.display = (id === 'about-screen') ? 'none' : 'flex';
         }
 
-        function clearChat() { location.reload(); }
-        function handleKeyPress(e) { if(e.key==='Enter') sendMessage(); }
+        function clearChat() {
+            if (confirm('Очистить весь чат и память?')) {
+                Brain.history = [];
+                document.getElementById('chat').innerHTML = '';
+            }
+        }
+
+        function handleKeyPress(e) {
+            if (e.key === 'Enter') sendMessage();
+        }
+
+        
+        window.onload = () => {
+            const chat = document.getElementById('chat');
+            const welcome = document.createElement('div');
+            welcome.className = 'msg-wrap';
+            welcome.innerHTML = `
+                <div class="avatar"><img class="bot-img" src="${BOT_LOGO_URL}"></div>
+                <div class="msg bot">
+                    Привет! Я <strong>GmOne</strong> — теперь с настоящим мозгом.<br>
+                    Память, контекст, валюта, погода, шутки и многое другое.<br><br>
+                    <em>Попробуй спросить что-нибудь сложное — я справлюсь 😉</em>
+                </div>`;
+            chat.appendChild(welcome);
+        };
     </script>
 </body>
 </html>
