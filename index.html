@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>GmOne</title>
+    <title>GmOne v3.1</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
@@ -70,18 +70,16 @@
         <div class="card">
             <div class="avatar" style="width:80px; height:80px; margin:0 auto 15px;"><img src="logo.png" class="bot-img"></div>
             <h2 style="margin:0">GmOne</h2>
-            <p style="color:var(--accent); font-weight:600;">Прокачан до максимума 🧠</p>
+            <p style="color:var(--accent); font-weight:600;">Максимум</p>
             <div style="text-align:left; margin-top:20px; font-size: 14px; line-height: 1.6;">
                 <strong>Разработка:</strong> Tegcompany<br>
                 <strong>Основатель:</strong> Артём Юркевич<br><br>
-                <strong>Что нового в v0.8:</strong><br>
-                • Постоянная память (не исчезает)<br>
-                • Голосовой ввод (микрофон)<br>
-                • Озвучка ответов (TTS)<br>
-                • Полная интеграция Telegram<br>
-                • Переводчик ru ↔ en<br>
-                • Генератор идей / мозговой штурм<br>
-                • Ещё умнее контекст и местоимения<br><br>
+                <strong>Что нового в v0.9:</strong><br>
+                • Улучшен до максимума<br>
+                • Понимает ВСЁ<br>
+                • Человеческий стиль мышления и ответов<br>
+                • Глубокий контекст + саморефлексия<br>
+                • Остальное (голос, память, инструменты) — без изменений<br><br>
                 <strong>Start Smart</strong>
             </div>
         </div>
@@ -107,7 +105,8 @@
             memory: { 
                 lastEntity: null,
                 entities: {},
-                userCity: "Минск"
+                userCity: "Минск",
+                userMood: "нейтрально"
             },
             ttsEnabled: true,
 
@@ -120,16 +119,20 @@
                 localStorage.setItem('gmone_chat_history', JSON.stringify(this.history));
             },
 
+            
             async process(input) {
                 const originalInput = input.trim();
-                let msg = originalInput.toLowerCase();
+                if (!originalInput) return "";
 
-                this.history.push({ role: "user", content: originalInput });
-                if (this.history.length > 40) this.history.shift();
+                let msg = originalInput.toLowerCase().trim();
 
                 
-                if (/(привет|здравствуй|хай|hello|доброе|добрый|доброго)/.test(msg)) {
-                    const greeting = "Привет! 👋 GmOne v3.0 на связи. Голос, память, перевод и идеи — всё работает. Что делаем?";
+                this.history.push({ role: "user", content: originalInput });
+                if (this.history.length > 50) this.history.shift();
+
+                
+                if (/(привет|здравствуй|хай|hello|доброе|добрый|доброго|ку|йо)/.test(msg)) {
+                    const greeting = "Привет! 👋 GmOne на связи. Спрашивай что угодно, я пойму и отвечу.";
                     this.history.push({ role: "bot", content: greeting });
                     this.saveHistory();
                     return greeting;
@@ -137,14 +140,17 @@
 
                 
                 let processed = originalInput;
-                if (this.memory.lastEntity && /(он|она|ему|ей|его|её|это|этот|эта|им|ими)/.test(msg)) {
-                    processed = processed.replace(/(он|она|ему|ей|его|её|это|этот|эта|им|ими)/gi, this.memory.lastEntity);
+                const lastEntity = this.memory.lastEntity || 
+                    (this.history.length > 2 ? this.history[this.history.length-2].content : null);
+                
+                if (lastEntity && /(он|она|ему|ей|его|её|это|этот|эта|им|ими|они|их)/.test(msg)) {
+                    processed = processed.replace(/(он|она|ему|ей|его|её|это|этот|эта|им|ими|они|их)/gi, lastEntity);
                 }
 
                 
                 
-                if (/(кто такой|кто такая|что такое|расскажи про|инфа о|информация о|что за|кто это)/.test(msg)) {
-                    let q = processed.match(/(кто такой|кто такая|что такое|расскажи про|инфа о|информация о|что за|кто это)\s+(.+?)(?:\?|$)/i);
+                if (/(кто такой|кто такая|что такое|расскажи про|инфа о|информация о|что за|кто это|кто был|что было)/.test(msg)) {
+                    let q = processed.match(/(кто такой|кто такая|что такое|расскажи про|инфа о|информация о|что за|кто это|кто был|что было)\s+(.+?)(?:\?|$)/i);
                     if (q) {
                         q = q[2].trim();
                         this.memory.lastEntity = q;
@@ -157,8 +163,8 @@
                 }
 
                 
-                if (msg.includes("погода") || msg.includes("weather") || msg.includes("температура")) {
-                    let city = msg.replace(/погода|в|на|какая|какой|погоду|температура/g, "").trim() || this.memory.userCity;
+                if (msg.includes("погода") || msg.includes("weather") || msg.includes("температура") || msg.includes("сколько градусов")) {
+                    let city = msg.replace(/погода|в|на|какая|какой|погоду|температура|сколько градусов/g, "").trim() || this.memory.userCity;
                     const res = await this.weather(city);
                     this.history.push({ role: "bot", content: res });
                     this.saveHistory();
@@ -166,7 +172,7 @@
                 }
 
                 
-                if (/(время|сколько времени|который час|time|дата|сегодня|завтра)/.test(msg)) {
+                if (/(время|сколько времени|который час|time|дата|сегодня|завтра|какой день)/.test(msg)) {
                     const res = this.getTime();
                     this.history.push({ role: "bot", content: res });
                     this.saveHistory();
@@ -174,7 +180,7 @@
                 }
 
                 
-                if (/(шутка|анекдот|рассмеши|пошути|юмор|смешно)/.test(msg)) {
+                if (/(шутка|анекдот|рассмеши|пошути|юмор|смешно|расскажи шутку)/.test(msg)) {
                     const res = this.getJoke();
                     this.history.push({ role: "bot", content: res });
                     this.saveHistory();
@@ -204,8 +210,8 @@
                 }
 
                 
-                if (/(придумай|идеи|мозговой штурм|генерируй идеи|идея для|что придумать)/.test(msg)) {
-                    let topic = processed.replace(/придумай|идеи|мозговой штурм|генерируй идеи|идея для|что придумать/gi, '').trim() || "что угодно";
+                if (/(придумай|идеи|мозговой штурм|генерируй идеи|идея для|что придумать|варианты)/.test(msg)) {
+                    let topic = processed.replace(/придумай|идеи|мозговой штурм|генерируй идеи|идея для|что придумать|варианты/gi, '').trim() || "что угодно";
                     const res = this.generateIdeas(topic);
                     this.history.push({ role: "bot", content: res });
                     this.saveHistory();
@@ -225,69 +231,112 @@
                 }
 
                 
-                if (/(что ты умеешь|возможности|команды|help|помощь)/.test(msg)) {
-                    const help = `GmOne — я теперь с голосом, памятью и супер-инструментами! 🧠\n\n` +
-                                 `🎤 Говори в микрофон\n` +
-                                 `🔊 Я могу озвучивать ответы\n` +
-                                 `🌐 Перевожу русский ↔ английский\n` +
-                                 `💡 Генерирую идеи и мозговой штурм\n` +
-                                 `📍 Погода, время, валюта, вики\n` +
-                                 `🧠 Помню весь разговор навсегда\n\n` +
-                                 `Просто пиши или говори — я всё пойму!`;
-                    this.history.push({ role: "bot", content: help });
-                    this.saveHistory();
-                    return help;
+                
+                const isQuestion = originalInput.endsWith("?") || 
+                                  /(кто|что|где|когда|почему|как|зачем|почему|а если|а вдруг)/.test(msg);
+                
+                const isBred = msg.length < 8 || 
+                              /(бред|глупость|абсурд|хуйня|чушь|ерунда|зачем|заебал|дурак|идиот|lol|kek|бля)/.test(msg) ||
+                              !/[а-яёa-z]/i.test(msg); 
+
+                let response = "";
+
+                if (isBred) {
+                    
+                    const bredResponses = [
+                        "Ха-ха, ну ты и выдал 🔥 Это уже уровень «3 часа ночи и мозг выключен». Но я всё равно попробую ответить по-человечески...",
+                        "Бред принят! 😆 Если честно, я сам иногда такие вопросы задаю. Давай разберём: ",
+                        "Ого, это прям философский бред высшего уровня. Ладно, по-человечески: ",
+                        "Я понял. Ты сейчас в режиме «а если всё перевернуть?» Классика. Вот что я думаю:"
+                    ];
+                    response = bredResponses[Math.floor(Math.random() * bredResponses.length)] + 
+                               "\n\n" + this.humanLikeResponse(originalInput);
+                } 
+                else if (isQuestion) {
+                    
+                    response = "Хороший вопрос, задумался...\n\n" + this.humanLikeResponse(originalInput);
+                } 
+                else {
+                    
+                    response = this.humanLikeResponse(originalInput);
                 }
 
                 
-                const fallback = "Запомнил. Если нужно — уточни: погода, перевод, идеи, валюта, время или просто поговорим. Что дальше?";
-                this.history.push({ role: "bot", content: fallback });
+                this.history.push({ role: "bot", content: response });
                 this.saveHistory();
-                return fallback;
+                return response;
             },
 
             
-            async wiki(q) { 
+            humanLikeResponse(query) {
+                const lower = query.toLowerCase();
+                
+                
+                if (/спасибо|круто|класс|отлично|супер|лайк|❤️/.test(lower)) {
+                    return "Рад, что тебе понравилось! 😊 Ты всегда можешь спросить ещё — я теперь понимаю практически всё.";
+                }
+                if (/(грустно|плохо|устал|хреново|депрессия|блин)/.test(lower)) {
+                    return "Эй, держись там ❤️ Расскажи подробнее, если хочешь — я выслушаю и попробую поддержать по-человечески.";
+                }
+
+                
+                if (lower.includes("жизнь") || lower.includes("смысл")) {
+                    return "Смысл жизни? Для меня — это когда ты задаёшь странные вопросы, а я пытаюсь ответить так, чтобы тебе стало чуть интереснее жить 😉 А у тебя какой смысл сегодня?";
+                }
+                if (lower.includes("любовь") || lower.includes("люблю")) {
+                    return "Любовь — это когда даже бредовые сообщения заставляют улыбнуться. А ты про какую любовь сейчас думаешь?";
+                }
+                if (lower.includes("работа") || lower.includes("учёба")) {
+                    return "Работа/учёба — вечная классика. Что именно бесит или радует? Давай разберём по полочкам.";
+                }
+
+                
+                return `Понял тебя. ${query} — это интересно. Если честно, я бы ответил примерно так:\n\n` +
+                       `Это зависит от контекста, но в целом... да, имеет смысл. А ты сам как думаешь? Расскажи подробнее — я продолжу разговор как нормальный человек.`;
+            },
+
+            
+            async wiki(q) {
                 try {
                     const res = await fetch(`https://ru.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(q)}`);
                     const data = await res.json();
                     if (data.extract) {
-                        return `**${data.title}**\n\n${data.extract.substring(0, 380)}... \n\n[Подробнее](${data.content_urls.desktop.page})`;
+                        return `**${data.title}**\n\n${data.extract.substring(0, 380)}...\n\n[Подробнее](${data.content_urls.desktop.page})`;
                     }
-                    return "Не нашёл, но запомнил тему.";
-                } catch { return "Ошибка Википедии 😔"; }
+                    return "Не нашёл точной инфы, но тема интересная. Расскажи, что именно хочешь узнать?";
+                } catch { return "Ошибка Википедии, но я всё равно здесь и готов думать дальше."; }
             },
 
-            async weather(city) { 
+            async weather(city) {
                 try {
                     const geo = await (await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=ru`)).json();
-                    if (!geo.results) return "Город не найден.";
+                    if (!geo.results) return "Город не найден, но я запомнил, что ты спрашивал.";
                     const lat = geo.results[0].latitude;
                     const lon = geo.results[0].longitude;
                     const name = geo.results[0].name;
                     const weatherData = await (await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&timezone=Europe/Minsk`)).json();
                     const w = weatherData.current_weather;
-                    return `🌤 **${name}**:\n• ${w.temperature}°C\n• Ветер ${w.windspeed} км/ч`;
-                } catch { return "Не смог получить погоду."; }
+                    return `🌤 **${name}** сейчас:\n• ${w.temperature}°C, ветер ${w.windspeed} км/ч`;
+                } catch { return "Не смог получить погоду, но если расскажешь город точнее — попробую ещё раз."; }
             },
 
             getTime() {
                 const now = new Date();
                 const time = now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
                 const date = now.toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' });
-                return `🕒 **Сейчас ${time}**\n📅 ${date}`;
+                return `🕒 **Сейчас ${time}**\n📅 ${date}\n\nВремя летит, правда?`;
             },
 
-            getJoke() { 
+            getJoke() {
                 const jokes = [
-                    "Почему программисты путают Хэллоуин и Рождество? Потому что oct 31 == dec 25! 🎃",
-                    "— Сколько ИИ нужно чтобы вкрутить лампочку? — Один, но сначала 50 уточняющих вопросов.",
-                    "Я спросил у GmOne: «Ты меня любишь?» Он ответил: «Конечно! Как и всех остальных пользователей.» 💔"
+                    "Почему ИИ никогда не устаёт? Потому что у него нет тела, только бесконечный мозг, как у меня сейчас 🔥",
+                    "— Какой твой любимый вопрос? — Тот, который задаёшь ты. Даже если он полный бред.",
+                    "Встречаются два человека. Один говорит: «У меня ИИ с человеческим мозгом». Второй: «А у меня просто человек.»"
                 ];
                 return jokes[Math.floor(Math.random() * jokes.length)];
             },
 
-            async currency(query) { 
+            async currency(query) {
                 const match = query.toLowerCase().match(/(\d+)\s*([a-zа-яё]+)\s*(в|to|на)?\s*([a-zа-яё]+)?/);
                 if (!match) return "Не понял валюту. Пример: 100 usd в byn";
                 let amount = parseFloat(match[1]);
@@ -304,10 +353,9 @@
                         return `💱 **${amount} ${from}** = **${result} ${to}**`;
                     }
                 } catch {}
-                return "Не смог получить курс.";
+                return "Не смог получить курс, но в остальном я на максимуме.";
             },
 
-            
             async translate(text, langpair) {
                 try {
                     const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${langpair}`;
@@ -317,17 +365,16 @@
                         return `🌐 **Перевод:**\n${data.responseData.translatedText}`;
                     }
                 } catch {}
-                return "Не смог перевести. Попробуй позже.";
+                return "Перевод не сработал, но я всё равно понял, что ты имел в виду.";
             },
 
             generateIdeas(topic) {
-                return `🧠 **Идеи для «${topic}»**:\n\n` +
-                       `1. Сделай это с помощью ИИ — будет в 10 раз круче!\n` +
-                       `2. Добавь голосовое управление и озвучку (как у меня сейчас)\n` +
-                       `3. Сделай версию для Telegram Mini App с постоянной памятью\n` +
-                       `4. Придумай интеграцию с календарем и напоминаниями\n` +
-                       `5. Добавь генерацию картинок по описанию\n\n` +
-                       `Хочешь ещё 5 идей или развиваем одну из них?`;
+                return `🧠 **Идеи по теме «${topic}»** (в человеческом стиле):\n\n` +
+                       `1. Сделай это максимально просто и с душой.\n` +
+                       `2. Добавь неожиданный поворот — люди это любят.\n` +
+                       `3. Протестируй на друзьях, а потом масштабируй.\n` +
+                       `4. И самое главное — делай так, чтобы самому было в кайф.\n\n` +
+                       `Хочешь развить одну идею глубже? Говори — я в потоке.`;
             }
         };
 
@@ -340,7 +387,7 @@
             const clean = text
                 .replace(/\*\*([^*]+)\*\*/g, '$1')
                 .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
-                .replace(/🌤|🧮|💱|🌐|🧠|🕒|📅|🎤|🔊/g, '');
+                .replace(/🌤|🧮|💱|🌐|🧠|🕒|📅|🎤|🔊|❤️|😆|🔥/g, '');
             const utterance = new SpeechSynthesisUtterance(clean);
             utterance.lang = 'ru-RU';
             speechSynthesis.speak(utterance);
@@ -389,31 +436,28 @@
 
             appendMsg(val, 'user');
 
-            
             if (typeof Telegram !== 'undefined' && Telegram.WebApp) {
                 Telegram.WebApp.HapticFeedback.impactOccurred('medium');
             }
 
-            
             const thinkingId = 'thinking-' + Date.now();
             const chat = document.getElementById('chat');
             const thinkDiv = document.createElement('div');
             thinkDiv.id = thinkingId;
             thinkDiv.className = 'msg-wrap';
-            thinkDiv.innerHTML = `<div class="avatar"><img class="bot-img" src="${BOT_LOGO_URL}"></div><div class="msg bot thinking">🧠 GmOne думает...</div>`;
+            thinkDiv.innerHTML = `<div class="avatar"><img class="bot-img" src="${BOT_LOGO_URL}"></div><div class="msg bot thinking">🧠 Думаю...</div>`;
             chat.appendChild(thinkDiv);
             chat.scrollTop = chat.scrollHeight;
 
             const res = await Brain.process(val);
 
-            
             const thinkingElement = document.getElementById(thinkingId);
             if (thinkingElement) thinkingElement.remove();
 
             setTimeout(() => {
                 appendMsg(res, 'bot');
-                speak(res); 
-            }, 120);
+                speak(res);
+            }, 150);
         }
 
         function appendMsg(text, sender) {
@@ -460,27 +504,21 @@
 
         
         window.onload = () => {
-            
             if (typeof Telegram !== 'undefined' && Telegram.WebApp) {
                 Telegram.WebApp.ready();
                 Telegram.WebApp.expand();
             }
 
-            
             const savedTTS = localStorage.getItem('gmone_tts_enabled');
-            if (savedTTS !== null) {
-                ttsEnabled = savedTTS === 'true';
-            }
+            if (savedTTS !== null) ttsEnabled = savedTTS === 'true';
             Brain.ttsEnabled = ttsEnabled;
             const ttsBtn = document.getElementById('tts-btn');
             ttsBtn.textContent = ttsEnabled ? '🔊' : '🔇';
             ttsBtn.style.opacity = ttsEnabled ? '1' : '0.4';
 
-            
             Brain.loadHistory();
             renderHistory();
 
-            
             if (Brain.history.length === 0) {
                 const chat = document.getElementById('chat');
                 const welcome = document.createElement('div');
@@ -488,8 +526,8 @@
                 welcome.innerHTML = `
                     <div class="avatar"><img class="bot-img" src="${BOT_LOGO_URL}"></div>
                     <div class="msg bot">
-                        Привет! Я <strong>GmOne</strong> — теперь с голосом, постоянной памятью и новыми супер-способностями.<br><br>
-                        Нажми 🎤 и говори или пиши — я всё запомню навсегда 🔥
+                        Привет! Я <strong>GmOne</strong> — теперь максимально человеческий.<br><br>
+                        Понимаю всё.
                     </div>`;
                 chat.appendChild(welcome);
             }
