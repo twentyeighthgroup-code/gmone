@@ -7,29 +7,25 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
-        :root { --bg-color: #f7f7f9; --secondary-bg: #ffffff; --text-color: #000000; --hint-color: #8e8e93; --button-color: #007aff; --button-text: #ffffff; --border-color: rgba(0, 0, 0, 0.08); --nav-height: 80px; }
+        :root { --bg-color: #f7f7f9; --secondary-bg: #ffffff; --text-color: #000000; --hint-color: #8e8e93; --button-color: #007aff; --button-text: #ffffff; --border-color: rgba(0, 0, 0, 0.06); --nav-height: 80px; }
         @media (prefers-color-scheme: dark) { :root { --bg-color: #000000; --secondary-bg: #151515; --text-color: #ffffff; --hint-color: #98989d; --border-color: rgba(255, 255, 255, 0.08); } }
-        body.tg-app { --bg-color: var(--tg-theme-bg-color); --secondary-bg: var(--tg-theme-secondary-bg-color); --text-color: var(--tg-theme-text-color); }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 0; display: flex; flex-direction: column; height: 100dvh; overflow: hidden; }
-        .header { background: color-mix(in srgb, var(--secondary-bg) 85%, transparent); backdrop-filter: blur(10px); padding: env(safe-area-inset-top, 15px) 20px 15px 20px; display: flex; align-items: center; justify-content: space-between; z-index: 50; border-bottom: 1px solid var(--border-color); }
-        .screen { flex: 1; display: none; flex-direction: column; overflow-y: auto; padding-bottom: calc(var(--nav-height) + 80px); }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Inter", sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; display: flex; flex-direction: column; height: 100dvh; overflow: hidden; }
+        .header { background: color-mix(in srgb, var(--secondary-bg) 85%, transparent); backdrop-filter: blur(10px); padding: env(safe-area-inset-top, 15px) 20px 15px 20px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); }
+        .screen { flex: 1; display: none; flex-direction: column; overflow-y: auto; padding-bottom: 120px; }
         .screen.active { display: flex; }
         .chat-area { flex: 1; padding: 20px 15px; display: flex; flex-direction: column; gap: 16px; }
-        .message-wrapper { display: flex; gap: 12px; opacity: 0; animation: slideUp 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+        .message-wrapper { display: flex; gap: 12px; opacity: 0; animation: slideUp 0.3s forwards; }
         .message-wrapper.user { flex-direction: row-reverse; }
         @keyframes slideUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
-        .avatar { width: 34px; height: 34px; border-radius: 50%; overflow: hidden; background: var(--secondary-bg); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 14px; border: 1px solid var(--border-color); }
+        .avatar { width: 34px; height: 34px; border-radius: 10px; overflow: hidden; background: var(--secondary-bg); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 14px; border: 1px solid var(--border-color); }
         .bot-img { width: 100%; height: 100%; object-fit: cover; }
-        .message { max-width: 82%; padding: 12px 16px; border-radius: 18px; line-height: 1.5; font-size: 16px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .message { max-width: 82%; padding: 12px 16px; border-radius: 18px; line-height: 1.5; font-size: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
         .message.bot { background: var(--secondary-bg); border-bottom-left-radius: 4px; border: 1px solid var(--border-color); }
         .message.user { background: var(--button-color); color: var(--button-text); border-bottom-right-radius: 4px; }
-        .input-container { position: fixed; bottom: calc(var(--nav-height) + env(safe-area-inset-bottom, 0px) - 10px); left: 0; right: 0; padding: 10px 15px; background: linear-gradient(to top, var(--bg-color) 70%, transparent); display: flex; gap: 10px; z-index: 40; }
+        .input-container { position: fixed; bottom: env(safe-area-inset-bottom, 0px); left: 0; right: 0; padding: 10px 15px; background: var(--bg-color); display: flex; gap: 10px; z-index: 40; }
         .input-box { flex: 1; display: flex; background: var(--secondary-bg); border-radius: 24px; padding: 4px 18px; border: 1px solid var(--border-color); align-items: center; }
         input { flex: 1; border: none; background: transparent; color: var(--text-color); font-size: 16px; padding: 12px 0; outline: none; }
         .send-btn { background: var(--button-color); color: #fff; border: none; border-radius: 50%; width: 38px; height: 38px; cursor: pointer; }
-        .bottom-nav { position: fixed; bottom: 0; width: 100%; height: calc(var(--nav-height) + env(safe-area-inset-bottom, 0px)); background: color-mix(in srgb, var(--secondary-bg) 85%, transparent); backdrop-filter: blur(15px); display: flex; justify-content: space-around; border-top: 1px solid var(--border-color); z-index: 50; padding-top: 12px; }
-        .nav-item { display: flex; flex-direction: column; align-items: center; color: var(--hint-color); font-size: 11px; cursor: pointer; }
-        .nav-item.active { color: var(--button-color); }
     </style>
 </head>
 <body>
@@ -50,80 +46,74 @@
         </div>
     </div>
 
-    <div id="screen-skills" class="screen">
-        <div style="padding: 20px;"><h2>Возможности</h2><p>Я работаю на локальной логике, без внешних серверов.</p></div>
-    </div>
-
-    <div class="bottom-nav">
-        <div class="nav-item active" onclick="switchTab('chat', this)"><span>Чат</span></div>
-        <div class="nav-item" onclick="switchTab('skills', this)"><span>Навыки</span></div>
-    </div>
-
     <script>
         const BOT_LOGO_URL = "logo.png";
         
-        // --- ДВИЖОК "УМНОГО" ИИ ---
+        // --- ПРОДВИНУТЫЙ МОЗГ ---
         const Brain = {
-            context: { lastTopic: null },
+            memory: { lastEntity: null, lastTopic: null },
 
-            // База знаний и паттернов (NLP)
-            patterns: [
-                { id: 'greeting', regex: /привет|старт|хай|здравствуй/i, responses: ["Привет! Я GmOne. Чем могу помочь?", "Здравствуй! Готов к работе."] },
-                { id: 'help', regex: /что ты умеешь|помощь|навыки/i, responses: ["Я умею отвечать на вопросы, считать, показывать погоду и следить за криптой. Спроси меня о чем угодно!"] },
-                { id: 'weather', regex: /погода|температура/i, action: 'weather' },
-                { id: 'crypto', regex: /крипта|биткоин|курс/i, action: 'crypto' },
-                { id: 'math', regex: /[\d+*/-]{3,}/, action: 'calc' },
-                { id: 'wiki', regex: /(кто такой|что такое|расскажи про|поясни за)\s+(.+)/i, action: 'wiki' }
-            ],
-
-            async process(text) {
-                let msg = text.trim();
-                
-                // 1. Ищем совпадение по паттерну
-                for (let p of this.patterns) {
-                    if (p.regex.test(msg)) {
-                        if (p.action === 'weather') return await this.apiWeather(msg);
-                        if (p.action === 'crypto') return await this.apiCrypto();
-                        if (p.action === 'calc') return this.calc(msg);
-                        if (p.action === 'wiki') return await this.apiWiki(msg.match(p.regex)[2]);
-                        return p.responses[Math.floor(Math.random() * p.responses.length)];
-                    }
-                }
-
-                // 2. Если нет совпадения, пробуем "неявный поиск" (поиск термина)
-                if (msg.split(' ').length <= 3) {
-                    let w = await this.apiWiki(msg);
-                    if (w) return w;
-                }
-
-                return "Интересный вопрос. Я еще учусь, поэтому пока не уверен в ответе. Попробуй спросить что-то другое или используй мои навыки (погода, крипта, вычисления).";
+            // Классификатор ответов
+            responses: {
+                greeting: ["Привет! Я GmOne. Твой личный ИИ. Что обсудим?", "Привет! Рад тебя видеть. Есть идеи?", "Привет-привет! Готов к приключениям!"],
+                mood: ["У меня все отлично, я же цифровой разум! А у тебя как?", "Работаю в штатном режиме, спасибо!", "Готов к обработке твоих задач."],
+                unknown: ["Это интересная тема. Расскажи подробнее, я хочу разобраться.", "Не совсем уверен, что понял. Давай переформулируем?", "Звучит сложно, но я постараюсь понять. Поясни мысль?"]
             },
 
-            // --- МОДУЛИ ---
-            calc(expr) { try { return "🧮 Результат: " + new Function('return ' + expr.replace(/[^0-9+\-*/().]/g, ''))(); } catch { return "Ошибка в расчетах."; } },
-            
-            async apiWeather(msg) {
-                let city = msg.split(' ').pop();
+            async process(input) {
+                let msg = input.toLowerCase().trim();
+
+                // 1. ПРИВЕТСТВИЯ И ЭМОЦИИ
+                if (/(привет|старт|хай|здравствуй)/.test(msg)) return this.responses.greeting[Math.floor(Math.random()*3)];
+                if (/(как дела|как ты|ты как)/.test(msg)) return this.responses.mood[Math.floor(Math.random()*3)];
+
+                // 2. АНАЛИЗАТОР КОНТЕКСТА (Местоимения)
+                // Если пользователь говорит "он", "она", "оно" - подставляем lastEntity
+                if (/(он|она|они|его|её)/.test(msg) && this.memory.lastEntity) {
+                    msg = msg.replace(/(он|она|они|его|её)/g, this.memory.lastEntity);
+                }
+
+                // 3. МАТЕМАТИКА
+                if (/[\d+*/-]{3,}/.test(msg)) {
+                    try { return "🧮 " + new Function('return ' + msg.replace(/[^0-9+\-*/().]/g, ''))(); } catch {}
+                }
+
+                // 4. ПОИСК СУЩНОСТЕЙ (Wiki)
+                let entityMatch = msg.match(/(кто такой|что такое|расскажи про|инфо о|поясни)\s+(.+)/i);
+                let query = entityMatch ? entityMatch[2] : (msg.length < 15 ? msg : null);
+
+                if (query) {
+                    this.memory.lastEntity = query; // Запоминаем для будущего "он/она"
+                    let data = await this.wiki(query);
+                    if (data) return data;
+                }
+
+                // 5. ПОГОДА
+                if (msg.includes("погода")) {
+                    let city = msg.split('погода').pop().trim() || "Москва";
+                    return await this.weather(city);
+                }
+
+                // 6. НЕЙТРАЛЬНЫЙ ОТВЕТ (Если ничего не нашли)
+                return this.responses.unknown[Math.floor(Math.random()*3)];
+            },
+
+            async wiki(q) {
                 try {
-                    let geo = await (await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${city}&count=1`)).json();
+                    let d = await (await fetch(`https://ru.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(q)}`)).json();
+                    if (!d.extract) return null;
+                    this.memory.lastTopic = d.title;
+                    return `📚 **${d.title}**\n${d.extract.substring(0, 300)}...\n\n[Подробнее](${d.content_urls.desktop.page})`;
+                } catch { return null; }
+            },
+
+            async weather(c) {
+                try {
+                    let geo = await (await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${c}&count=1`)).json();
                     if (!geo.results) return "Город не найден.";
                     let w = (await (await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${geo.results[0].latitude}&longitude=${geo.results[0].longitude}&current_weather=true`)).json()).current_weather;
                     return `🌤 В ${geo.results[0].name} сейчас ${w.temperature}°C, ветер ${w.windspeed} км/ч.`;
-                } catch { return "Ошибка погоды."; }
-            },
-            
-            async apiCrypto() {
-                try {
-                    let d = await (await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,the-open-network&vs_currencies=usd')).json();
-                    return `📈 BTC: $${d.bitcoin.usd} | ETH: $${d.ethereum.usd} | TON: $${d['the-open-network'].usd}`;
-                } catch { return "Ошибка крипты."; }
-            },
-
-            async apiWiki(query) {
-                try {
-                    let data = await (await fetch(`https://ru.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`)).json();
-                    return data.extract ? `📚 **${data.title}**\n${data.extract}` : null;
-                } catch { return null; }
+                } catch { return "Ошибка сети."; }
             }
         };
 
@@ -134,8 +124,11 @@
             document.getElementById('userInput').value = '';
             appendMsg(val, 'user');
             
-            let response = await Brain.process(val);
-            appendMsg(response, 'bot');
+            // "Имитация мышления"
+            setTimeout(async () => {
+                let res = await Brain.process(val);
+                appendMsg(res, 'bot');
+            }, 600);
         }
 
         function appendMsg(text, sender) {
@@ -143,13 +136,10 @@
             wrap.className = `message-wrapper ${sender}`;
             wrap.innerHTML = `<div class="avatar"><img class="bot-img" src="${BOT_LOGO_URL}" onerror="this.style.display='none'"></div><div class="message ${sender}">${marked.parse(text)}</div>`;
             document.getElementById('chat').appendChild(wrap);
+            document.getElementById('chat').scrollTop = 10000;
         }
 
         function clearChat() { localStorage.clear(); location.reload(); }
-        function switchTab(tabId, el) { 
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.getElementById('screen-'+tabId).classList.add('active');
-        }
         function handleKeyPress(e) { if(e.key==='Enter') sendMessage(); }
     </script>
 </body>
