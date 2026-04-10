@@ -8,29 +8,33 @@
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
         :root { --bg: #f8fafc; --surface: #ffffff; --text: #1e293b; --accent: #2563eb; --bubble-bot: #f1f5f9; --bubble-user: #2563eb; --border: #e2e8f0; --nav: 70px; }
+        @media (prefers-color-scheme: dark) { :root { --bg: #000000; --surface: #121212; --text: #ffffff; --bubble-bot: #1e1e1e; --border: #27272a; } }
+        
         body { font-family: -apple-system, BlinkMacSystemFont, "Inter", sans-serif; background: var(--bg); color: var(--text); margin: 0; display: flex; flex-direction: column; height: 100dvh; overflow: hidden; }
         
-        .header { background: var(--surface); padding: env(safe-area-inset-top, 15px) 20px 10px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); z-index: 10; }
+        .header { background: var(--surface); padding: env(safe-area-inset-top, 15px) 20px 10px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); z-index: 100; }
         .logo { font-weight: 800; font-size: 18px; color: var(--accent); }
         
-        .screen { flex: 1; display: none; flex-direction: column; overflow-y: auto; padding-bottom: 100px; }
+        .screen { flex: 1; display: none; flex-direction: column; overflow-y: auto; padding-bottom: 120px; }
         .screen.active { display: flex; }
         
         .chat-area { flex: 1; padding: 20px; display: flex; flex-direction: column; gap: 16px; max-width: 600px; margin: 0 auto; width: 100%; }
         .msg-wrap { display: flex; gap: 10px; align-items: flex-end; animation: slideUp 0.3s ease; }
         .msg-wrap.user { flex-direction: row-reverse; }
+        
         .avatar { width: 32px; height: 32px; border-radius: 8px; overflow: hidden; background: #e2e8f0; flex-shrink: 0; }
         .bot-img { width: 100%; height: 100%; object-fit: cover; }
+        
         .msg { padding: 12px 16px; border-radius: 16px; font-size: 15px; line-height: 1.5; max-width: 75%; }
-        .msg.bot { background: var(--bubble-bot); border-bottom-left-radius: 4px; }
+        .msg.bot { background: var(--bubble-bot); border-bottom-left-radius: 4px; border: 1px solid var(--border); }
         .msg.user { background: var(--bubble-user); color: #fff; border-bottom-right-radius: 4px; }
         
-        .input-area { position: fixed; bottom: var(--nav); left: 0; right: 0; padding: 10px 15px; background: var(--bg); display: flex; gap: 10px; align-items: center; border-top: 1px solid var(--border); padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px)); }
+        .input-area { position: fixed; bottom: var(--nav); left: 0; right: 0; padding: 10px 15px; background: var(--bg); display: flex; gap: 10px; align-items: center; border-top: 1px solid var(--border); padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px)); z-index: 90; }
         input { flex: 1; padding: 12px 16px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface); color: var(--text); outline: none; font-size: 15px; }
         .send-btn { background: var(--accent); color: white; border: none; width: 42px; height: 42px; border-radius: 12px; cursor: pointer; }
 
-        .nav-bar { position: fixed; bottom: 0; width: 100%; height: var(--nav); background: var(--surface); display: flex; justify-content: space-around; border-top: 1px solid var(--border); padding-bottom: env(safe-area-inset-bottom, 0px); z-index: 20; }
-        .nav-item { color: #64748b; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; flex-direction: column; justify-content: center; align-items: center; flex: 1; }
+        .nav-bar { position: fixed; bottom: 0; width: 100%; height: var(--nav); background: var(--surface); display: flex; justify-content: space-around; border-top: 1px solid var(--border); padding-bottom: env(safe-area-inset-bottom, 0px); z-index: 100; }
+        .nav-item { color: #64748b; font-size: 12px; font-weight: 600; cursor: pointer; display: flex; flex-direction: column; justify-content: center; align-items: center; flex: 1; transition: 0.2s; }
         .nav-item.active { color: var(--accent); }
         
         .card { background: var(--surface); border: 1px solid var(--border); padding: 24px; border-radius: 16px; margin: 20px auto; max-width: 500px; text-align: center; }
@@ -53,17 +57,17 @@
     <div id="about-screen" class="screen">
         <div class="card">
             <div class="avatar" style="width:80px; height:80px; margin:0 auto 15px;"><img src="logo.png" class="bot-img"></div>
-            <h2 style="margin:0">GmOne</h2>
+            <h2 style="margin:0">GmOne AI</h2>
             <p style="color:var(--secondary)">ИИ-ассистент</p>
             <div style="text-align:left; margin-top:20px; font-size: 14px; line-height: 1.6;">
                 <strong>Разработка:</strong> Tegcompany<br>
                 <strong>Основатель:</strong> Артём Юркевич<br><br>
-                Start Smart.
+                 Start Smart.
             </div>
         </div>
     </div>
 
-    <div class="input-area" id="inputZone">
+    <div class="input-area" id="inputContainer">
         <input type="text" id="userInput" placeholder="Ваш запрос..." onkeypress="handleKeyPress(event)">
         <button class="send-btn" onclick="sendMessage()">➤</button>
     </div>
@@ -75,6 +79,8 @@
 
     <script>
         const BOT_LOGO_URL = "logo.png";
+        
+        // --- МОЗГ ---
         const Brain = {
             memory: { lastEntity: null },
             async process(input) {
@@ -88,12 +94,12 @@
                 }
                 if (msg.includes("погода")) return await this.weather(msg.split("погода").pop().trim() || "Москва");
                 if (/[\d+*/-]{3,}/.test(msg)) try { return "🧮 " + eval(msg.replace(/[^0-9+\-*/().]/g, '')); } catch { return "Ошибка."; }
-                return "GmOne на связи. Задавай любой вопрос или проси найти информацию.";
+                return "GmOne на связи. Задавай вопрос или проси найти информацию.";
             },
             async wiki(q) {
                 try {
                     let d = await (await fetch(`https://ru.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(q)}`)).json();
-                    return d.extract ? `**${d.title}**\n\n${d.extract.substring(0, 300)}...` : "Не нашел информации.";
+                    return d.extract ? `**${d.title}**\n\n${d.extract.substring(0, 300)}...` : "Не нашел.";
                 } catch { return "Ошибка сети."; }
             },
             async weather(c) {
@@ -105,6 +111,7 @@
             }
         };
 
+        // --- UI ---
         async function sendMessage() {
             let input = document.getElementById('userInput');
             if(!input.value) return;
@@ -112,7 +119,7 @@
             input.value = '';
             appendMsg(val, 'user');
             let res = await Brain.process(val);
-            appendMsg(res, 'bot');
+            setTimeout(() => appendMsg(res, 'bot'), 300);
         }
 
         function appendMsg(text, sender) {
@@ -129,9 +136,8 @@
             document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
             document.getElementById(id).classList.add('active');
             el.classList.add('active');
-            // Прячем ввод в разделе "О нас"
-            document.getElementById('inputZone')?.style.display = (id === 'about-screen') ? 'none' : 'flex';
-            document.getElementById('inputZone').style.display = (id === 'about-screen') ? 'none' : 'flex';
+            // Управление видимостью ввода
+            document.getElementById('inputContainer').style.display = (id === 'about-screen') ? 'none' : 'flex';
         }
 
         function clearChat() { location.reload(); }
