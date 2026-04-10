@@ -3,510 +3,154 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#ffffff">
     <title>GmOne AI</title>
-    
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    
     <style>
-        /* ПРЕМИУМ ПАЛИТРА (Светлая тема) */
-        :root {
-            --bg-color: #f7f7f9;
-            --secondary-bg: #ffffff;
-            --text-color: #000000;
-            --hint-color: #8e8e93;
-            --button-color: #007aff;
-            --button-text: #ffffff;
-            --border-color: rgba(0, 0, 0, 0.06);
-            --nav-height: 80px;
-            --shadow-sm: 0 2px 10px rgba(0,0,0,0.03);
-            --shadow-md: 0 8px 24px rgba(0,0,0,0.06);
-            --bubble-user: linear-gradient(135deg, #007aff, #0056b3);
-            --font-family: "SF Pro Display", -apple-system, BlinkMacSystemFont, "Inter", Roboto, sans-serif;
-        }
-
-        /* ПРЕМИУМ ПАЛИТРА (Темная тема) */
-        @media (prefers-color-scheme: dark) {
-            :root {
-                --bg-color: #000000;
-                --secondary-bg: #151515;
-                --text-color: #ffffff;
-                --hint-color: #98989d;
-                --border-color: rgba(255, 255, 255, 0.08);
-                --shadow-sm: 0 2px 10px rgba(0,0,0,0.2);
-                --shadow-md: 0 8px 24px rgba(0,0,0,0.4);
-                --bubble-user: linear-gradient(135deg, #0a84ff, #004499);
-            }
-        }
-
-        /* ТЕЛЕГРАМ АДАПТАЦИЯ */
-        body.tg-app {
-            --bg-color: var(--tg-theme-bg-color);
-            --secondary-bg: var(--tg-theme-secondary-bg-color);
-            --text-color: var(--tg-theme-text-color);
-            --hint-color: var(--tg-theme-hint-color);
-            --button-color: var(--tg-theme-button-color);
-            --border-color: rgba(128, 128, 128, 0.15);
-        }
-
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-
-        body {
-            font-family: var(--font-family);
-            background-color: var(--bg-color); color: var(--text-color);
-            margin: 0; padding: 0; display: flex; flex-direction: column;
-            height: 100dvh; overflow: hidden; 
-            transition: background-color 0.3s cubic-bezier(0.25, 1, 0.5, 1);
-        }
-
-        /* GLASSMORPHISM ШАПКА */
-        .header {
-            background: var(--secondary-bg);
-            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-            background-color: color-mix(in srgb, var(--secondary-bg) 85%, transparent);
-            padding: env(safe-area-inset-top, 15px) 20px 15px 20px;
-            display: flex; align-items: center; justify-content: space-between;
-            z-index: 50; border-bottom: 1px solid var(--border-color);
-        }
-        .header-title { font-weight: 700; font-size: 19px; letter-spacing: -0.3px; }
-        .clear-btn { background: none; border:none; color: var(--hint-color); font-size: 20px; cursor:pointer; padding: 5px; transition: 0.2s; }
-        .clear-btn:active { transform: scale(0.8); color: #ff3b30; }
-
-        /* ЭКРАНЫ И АНИМАЦИИ */
-        .screen {
-            flex: 1; display: none; flex-direction: column; overflow-y: auto; overflow-x: hidden;
-            padding-bottom: calc(var(--nav-height) + env(safe-area-inset-bottom, 0px) + 80px);
-            animation: fadeIn 0.25s cubic-bezier(0.25, 1, 0.5, 1); will-change: opacity;
-        }
+        :root { --bg-color: #f7f7f9; --secondary-bg: #ffffff; --text-color: #000000; --hint-color: #8e8e93; --button-color: #007aff; --button-text: #ffffff; --border-color: rgba(0, 0, 0, 0.08); --nav-height: 80px; }
+        @media (prefers-color-scheme: dark) { :root { --bg-color: #000000; --secondary-bg: #151515; --text-color: #ffffff; --hint-color: #98989d; --border-color: rgba(255, 255, 255, 0.08); } }
+        body.tg-app { --bg-color: var(--tg-theme-bg-color); --secondary-bg: var(--tg-theme-secondary-bg-color); --text-color: var(--tg-theme-text-color); }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: var(--bg-color); color: var(--text-color); margin: 0; padding: 0; display: flex; flex-direction: column; height: 100dvh; overflow: hidden; }
+        .header { background: color-mix(in srgb, var(--secondary-bg) 85%, transparent); backdrop-filter: blur(10px); padding: env(safe-area-inset-top, 15px) 20px 15px 20px; display: flex; align-items: center; justify-content: space-between; z-index: 50; border-bottom: 1px solid var(--border-color); }
+        .screen { flex: 1; display: none; flex-direction: column; overflow-y: auto; padding-bottom: calc(var(--nav-height) + 80px); }
         .screen.active { display: flex; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* ЧАТ (World Class UI) */
-        .chat-area { flex: 1; padding: 20px 15px; display: flex; flex-direction: column; gap: 16px; scroll-behavior: smooth; }
-        
-        .message-wrapper { 
-            display: flex; gap: 12px; opacity: 0; 
-            animation: slideUp 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; 
-            will-change: transform, opacity; 
-        }
+        .chat-area { flex: 1; padding: 20px 15px; display: flex; flex-direction: column; gap: 16px; }
+        .message-wrapper { display: flex; gap: 12px; opacity: 0; animation: slideUp 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
         .message-wrapper.user { flex-direction: row-reverse; }
-        @keyframes slideUp { 
-            from { opacity: 0; transform: translate3d(0, 20px, 0) scale(0.98); } 
-            to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); } 
-        }
-
-        .avatar { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; flex-shrink: 0; overflow: hidden; background: var(--secondary-bg); box-shadow: var(--shadow-sm); border: 1px solid var(--border-color); }
-        .bot-img { width: 100%; height: 100%; object-fit: cover; } 
-
-        .message { max-width: 82%; padding: 12px 16px; border-radius: 20px; line-height: 1.5; font-size: 15.5px; letter-spacing: -0.2px; word-wrap: break-word; box-shadow: var(--shadow-sm); }
-        .message.bot { background-color: var(--secondary-bg); border-bottom-left-radius: 6px; border: 1px solid var(--border-color); }
-        .message.user { background: var(--bubble-user); color: #ffffff; border-bottom-right-radius: 6px; box-shadow: 0 4px 15px rgba(0, 122, 255, 0.2); }
-        
-        /* Rich Media в чате (Картинки из Википедии) */
-        .message img { width: 100%; border-radius: 12px; margin-bottom: 8px; object-fit: cover; }
-        .message p { margin: 0 0 8px 0; } .message p:last-child { margin: 0; }
-        .message a { color: var(--button-color); text-decoration: none; font-weight: 600; }
-        .message strong { font-weight: 700; }
-
-        /* ИНДИКАТОР ПЕЧАТИ (Smooth) */
-        .typing { display: flex; gap: 5px; padding: 6px 4px; align-items: center; height: 20px;}
-        .dot { width: 6px; height: 6px; background-color: var(--hint-color); border-radius: 50%; animation: pulse 1.4s cubic-bezier(0.4, 0, 0.6, 1) infinite; will-change: opacity; }
-        .dot:nth-child(1) { animation-delay: 0s; } .dot:nth-child(2) { animation-delay: 0.2s; } .dot:nth-child(3) { animation-delay: 0.4s; }
-        @keyframes pulse { 0%, 100% { opacity: 0.3; transform: scale(0.8); } 50% { opacity: 1; transform: scale(1.1); } }
-
-        /* ПЛАВАЮЩЕЕ ПОЛЕ ВВОДА */
-        .input-container {
-            position: fixed; bottom: calc(var(--nav-height) + env(safe-area-inset-bottom, 0px) - 10px);
-            left: 0; right: 0; padding: 10px 15px; background: linear-gradient(to top, var(--bg-color) 70%, transparent);
-            display: flex; gap: 10px; align-items: flex-end; z-index: 40;
-        }
-        .input-box {
-            flex: 1; display: flex; background: var(--secondary-bg); border-radius: 24px; padding: 4px 4px 4px 18px;
-            box-shadow: var(--shadow-md); border: 1px solid var(--border-color); align-items: center; transition: 0.3s;
-        }
-        .input-box:focus-within { border-color: var(--button-color); box-shadow: 0 4px 20px rgba(0, 122, 255, 0.15); }
-        input[type="text"] { flex: 1; border: none; background: transparent; color: var(--text-color); font-size: 16px; padding: 10px 0; outline: none; font-family: inherit; }
-        input[type="text"]::placeholder { color: var(--hint-color); }
-        
-        .send-btn { 
-            background: var(--button-color); color: #fff; border: none; border-radius: 50%; 
-            width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; 
-            cursor: pointer; transition: transform 0.15s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.2s; 
-        }
-        .send-btn:active { transform: scale(0.85); }
-        .send-btn.disabled { background: var(--hint-color); opacity: 0.5; pointer-events: none; }
-        .send-btn svg { width: 18px; fill: currentColor; transform: translateX(1px); }
-
-        /* КАРТОЧКИ (Навыки и О Нас) */
-        .page-content { padding: 20px 20px 40px 20px; max-width: 600px; margin: 0 auto; width: 100%;}
-        .page-title { font-size: 28px; font-weight: 800; margin-bottom: 24px; letter-spacing: -0.5px; }
-        
-        .skill-card { background: var(--secondary-bg); padding: 18px; border-radius: 18px; margin-bottom: 14px; cursor: pointer; box-shadow: var(--shadow-sm); border: 1px solid var(--border-color); transition: 0.25s cubic-bezier(0.2, 0.8, 0.2, 1); will-change: transform; }
-        .skill-card:active { transform: scale(0.96); background-color: var(--bg-color); }
-        .skill-title { font-weight: 700; font-size: 17px; margin-bottom: 6px; color: var(--button-color); display: flex; align-items: center; gap: 8px; }
-        .skill-desc { font-size: 14.5px; color: var(--hint-color); line-height: 1.4; }
-
-        .about-card { background: var(--secondary-bg); padding: 30px 20px; border-radius: 24px; text-align: center; margin-bottom: 20px; box-shadow: var(--shadow-sm); border: 1px solid var(--border-color); }
-        .about-logo-large { width: 90px; height: 90px; border-radius: 22px; margin: 0 auto 16px auto; object-fit: cover; display: block; box-shadow: var(--shadow-md); background-color: var(--secondary-bg); border: 1px solid var(--border-color); }
-        .about-card h2 { margin: 0 0 8px 0; font-size: 26px; font-weight: 800; letter-spacing: -0.5px;}
-        .about-card p { font-size: 15px; color: var(--hint-color); line-height: 1.5; margin: 0; }
-        .dev-badge { display: inline-block; background: var(--text-color); color: var(--bg-color); padding: 6px 16px; border-radius: 20px; font-size: 13px; font-weight: 700; margin-top: 20px; }
-
-        /* МЕНЮ НАВИГАЦИИ (Glassmorphism Bottom Bar) */
-        .bottom-nav { 
-            position: fixed; bottom: 0; width: 100%; height: calc(var(--nav-height) + env(safe-area-inset-bottom, 0px)); 
-            background: color-mix(in srgb, var(--secondary-bg) 85%, transparent);
-            backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
-            display: flex; justify-content: space-around; align-items: flex-start; 
-            border-top: 1px solid var(--border-color); z-index: 50; padding-top: 12px;
-        }
-        .nav-item { display: flex; flex-direction: column; align-items: center; width: 33%; color: var(--hint-color); font-size: 11px; font-weight: 600; cursor: pointer; transition: color 0.2s; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+        .avatar { width: 34px; height: 34px; border-radius: 50%; overflow: hidden; background: var(--secondary-bg); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 14px; border: 1px solid var(--border-color); }
+        .bot-img { width: 100%; height: 100%; object-fit: cover; }
+        .message { max-width: 82%; padding: 12px 16px; border-radius: 18px; line-height: 1.5; font-size: 16px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .message.bot { background: var(--secondary-bg); border-bottom-left-radius: 4px; border: 1px solid var(--border-color); }
+        .message.user { background: var(--button-color); color: var(--button-text); border-bottom-right-radius: 4px; }
+        .input-container { position: fixed; bottom: calc(var(--nav-height) + env(safe-area-inset-bottom, 0px) - 10px); left: 0; right: 0; padding: 10px 15px; background: linear-gradient(to top, var(--bg-color) 70%, transparent); display: flex; gap: 10px; z-index: 40; }
+        .input-box { flex: 1; display: flex; background: var(--secondary-bg); border-radius: 24px; padding: 4px 18px; border: 1px solid var(--border-color); align-items: center; }
+        input { flex: 1; border: none; background: transparent; color: var(--text-color); font-size: 16px; padding: 12px 0; outline: none; }
+        .send-btn { background: var(--button-color); color: #fff; border: none; border-radius: 50%; width: 38px; height: 38px; cursor: pointer; }
+        .bottom-nav { position: fixed; bottom: 0; width: 100%; height: calc(var(--nav-height) + env(safe-area-inset-bottom, 0px)); background: color-mix(in srgb, var(--secondary-bg) 85%, transparent); backdrop-filter: blur(15px); display: flex; justify-content: space-around; border-top: 1px solid var(--border-color); z-index: 50; padding-top: 12px; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; color: var(--hint-color); font-size: 11px; cursor: pointer; }
         .nav-item.active { color: var(--button-color); }
-        .nav-item svg { width: 26px; height: 26px; margin-bottom: 4px; fill: currentColor; transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1); }
-        .nav-item.active svg { transform: scale(1.15); }
     </style>
 </head>
 <body>
 
-    <!-- Шапка -->
     <div class="header">
-        <span class="header-title">GmOne</span>
-        <button class="clear-btn" onclick="clearChat()" title="Очистить чат">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-        </button>
+        <span class="header-title">GmOne AI</span>
+        <button class="clear-btn" onclick="clearChat()">🗑</button>
     </div>
 
-    <!-- ЭКРАН 1: ЧАТ -->
     <div id="screen-chat" class="screen active">
         <div class="chat-area" id="chat"></div>
     </div>
 
-    <!-- Поле ввода (Вынесено из скролла для стабильности) -->
-    <div class="input-container" id="inputBox">
+    <div class="input-container">
         <div class="input-box">
-            <input type="text" id="userInput" placeholder="Сообщение..." oninput="checkInput()" onkeypress="handleKeyPress(event)" autocomplete="off">
-            <button class="send-btn disabled" id="sendBtn" onclick="sendMessage()">
-                <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
-            </button>
+            <input type="text" id="userInput" placeholder="Сообщение..." onkeypress="handleKeyPress(event)">
+            <button class="send-btn" onclick="sendMessage()">➤</button>
         </div>
     </div>
 
-    <!-- ЭКРАН 2: НАВЫКИ -->
     <div id="screen-skills" class="screen">
-        <div class="page-content">
-            <div class="page-title">Возможности</div>
-            
-            <div class="skill-card" onclick="useSkill('Космос')">
-                <div class="skill-title">🧠 Интеллектуальный поиск</div>
-                <div class="skill-desc">Просто отправь любое слово или имя. Я найду информацию и покажу фотографию.</div>
-            </div>
-
-            <div class="skill-card" onclick="useSkill('Погода в Лондоне')">
-                <div class="skill-title">🌤 Метеостанция</div>
-                <div class="skill-desc">Точный анализ температуры и осадков в любой точке мира.</div>
-            </div>
-
-            <div class="skill-card" onclick="useSkill('Курс крипты')">
-                <div class="skill-title">📈 Финансы & Биржа</div>
-                <div class="skill-desc">Мгновенные котировки BTC, ETH и TON с рынков.</div>
-            </div>
-
-            <div class="skill-card" onclick="useSkill('(1500 * 20) / 4.5')">
-                <div class="skill-title">🧮 Вычислительный центр</div>
-                <div class="skill-desc">Безопасное решение сложных математических выражений.</div>
-            </div>
-        </div>
+        <div style="padding: 20px;"><h2>Возможности</h2><p>Я работаю на локальной логике, без внешних серверов.</p></div>
     </div>
 
-    <!-- ЭКРАН 3: О НАС -->
-    <div id="screen-about" class="screen">
-        <div class="page-content">
-            <div class="about-card">
-                <img class="about-logo-large bot-img" src="" alt="GmOne Logo">
-                <h2>GmOne</h2>
-                <p>Нейро-ассистент нового поколения. Мгновенный доступ к знаниям, вычислениям и сервисам.</p>
-                <div class="dev-badge">Version 0.3</div>
-            </div>
-
-            <div class="about-card" style="text-align: left;">
-                <h3 style="margin-top:0; font-size:18px; color: var(--button-color);">Tegcompany</h3>
-                <p style="color: var(--text-color); font-weight: 500;">Разработка ИИ-решений</p>
-                <br>
-                <p style="font-size: 14px;"><strong>Основатель:</strong><br>Юркевич Артём Игоревич</p>
-                <p style="font-size: 14px; margin-top: 10px;">Республика Беларусь</p>
-            </div>
-        </div>
-    </div>
-
-    <!-- НИЖНЯЯ НАВИГАЦИЯ -->
     <div class="bottom-nav">
-        <div class="nav-item active" onclick="switchTab('chat', this)">
-            <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/></svg>
-            <span>Чат</span>
-        </div>
-        <div class="nav-item" onclick="switchTab('skills', this)">
-            <svg viewBox="0 0 24 24"><path d="M13 2.05v3.03c3.39.49 6 3.39 6 6.92 0 .9-.22 1.75-.61 2.51l2.6 1.53c.64-1.24 1.01-2.66 1.01-4.04 0-4.74-3.46-8.68-8-9.95zM12 19c-3.87 0-7-3.13-7-7 0-3.53 2.61-6.43 6-6.92V2.05c-4.54 1.27-8 5.21-8 9.95 0 5.52 4.48 10 10 10 2.25 0 4.33-.74 6.01-2l-2.42-2.42c-1.03.88-2.27 1.42-3.59 1.42z"/></svg>
-            <span>Навыки</span>
-        </div>
-        <div class="nav-item" onclick="switchTab('about', this)">
-            <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
-            <span>Настройки</span>
-        </div>
+        <div class="nav-item active" onclick="switchTab('chat', this)"><span>Чат</span></div>
+        <div class="nav-item" onclick="switchTab('skills', this)"><span>Навыки</span></div>
     </div>
 
     <script>
-        // ==========================================
-        // ФАЙЛ ЛОГОТИПА В ПАПКЕ
         const BOT_LOGO_URL = "logo.png";
-        // ==========================================
-
-        // Инициализация изображений (С защитой от битых ссылок)
-        document.querySelectorAll('.bot-img').forEach(img => {
-            img.src = BOT_LOGO_URL;
-            img.onerror = () => { img.style.display = 'none'; img.parentElement.textContent = '🤖'; }; 
-        });
-
-        // Кеширование DOM
-        const $chat = document.getElementById('chat');
-        const $input = document.getElementById('userInput');
-        const $sendBtn = document.getElementById('sendBtn');
-        const $inputBox = document.getElementById('inputBox');
-
-        let tg = null;
-        let userName = "Гость";
-
-        if (window.Telegram?.WebApp?.initData) {
-            tg = window.Telegram.WebApp;
-            tg.expand();
-            document.body.classList.add('tg-app');
-            userName = tg.initDataUnsafe?.user?.first_name || "друг";
-            if(tg.headerColor) tg.setHeaderColor(tg.themeParams.secondary_bg_color);
-        }
-
-        function vibrate(type = 'light') {
-            if (tg?.HapticFeedback) {
-                try { tg.HapticFeedback.impactOccurred(type); } catch(e) {}
-            }
-        }
-
-        // Настройка парсера текста (Безопасность + Картинки)
-        marked.setOptions({ sanitize: false, breaks: true });
-
-        // --- WORLD-CLASS ИНТЕЛЛЕКТ ---
+        
+        // --- ДВИЖОК "УМНОГО" ИИ ---
         const Brain = {
-            // Умная погода с WMO кодами (Эмодзи осадков)
-            async getWeather(city) {
-                try {
-                    let geo = await (await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=ru`)).json();
-                    if (!geo.results) return null; 
-                    
-                    let weather = await (await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${geo.results[0].latitude}&longitude=${geo.results[0].longitude}&current_weather=true`)).json();
-                    let w = weather.current_weather;
-                    
-                    // Парсинг кода погоды в эмодзи
-                    let emoji = "🌤";
-                    if (w.weathercode === 0) emoji = "☀️";
-                    else if (w.weathercode > 0 && w.weathercode <= 3) emoji = "⛅️";
-                    else if (w.weathercode >= 51 && w.weathercode <= 67) emoji = "🌧";
-                    else if (w.weathercode >= 71 && w.weathercode <= 77) emoji = "❄️";
-                    else if (w.weathercode >= 95) emoji = "⛈";
+            context: { lastTopic: null },
 
-                    return `**${geo.results[0].name}**\n${emoji} Температура: **${w.temperature}°C**\n💨 Ветер: **${w.windspeed} км/ч**`;
-                } catch (e) { return null; }
-            },
-
-            // Форматированная крипта
-            async getCrypto() {
-                try {
-                    let data = await (await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,the-open-network&vs_currencies=usd')).json();
-                    const fmt = (num) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(num);
-                    return `📈 **Рынок криптовалют:**\n\n**Bitcoin (BTC):** ${fmt(data.bitcoin.usd)}\n**Ethereum (ETH):** ${fmt(data.ethereum.usd)}\n**TON Coin:** ${fmt(data['the-open-network'].usd)}`;
-                } catch (e) { return null; }
-            },
-
-            // RICH WIKIPEDIA (С поддержкой картинок!)
-            async getWiki(query) {
-                try {
-                    let cleanQuery = query.replace(/[?!.]/g, '').trim();
-                    let data = await (await fetch(`https://ru.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(cleanQuery)}`)).json();
-                    
-                    if (data.type === "disambiguation") return `Нашел несколько значений для "${cleanQuery}". Пожалуйста, уточни запрос.`;
-                    if (!data.extract) return null;
-
-                    // Если у статьи есть картинка - выводим ее!
-                    let imgMarkdown = data.thumbnail ? `![${data.title}](${data.thumbnail.source})\n` : "";
-                    
-                    return `${imgMarkdown}**${data.title}**\n${data.extract}\n\n[Читать полностью](${data.content_urls.desktop.page})`;
-                } catch (e) { return null; }
-            },
-            
-            // Безопасный супер-калькулятор
-            calc(expr) {
-                try {
-                    // Разрешаем только цифры, точки и матем. знаки
-                    if (!/^[\d+\-*/().\s%]+$/.test(expr)) return null;
-                    let result = new Function('return ' + expr.replace(/%/g, '/100'))();
-                    if (!isFinite(result) || isNaN(result)) return null;
-                    return `🧮 **Результат:**\n\`${expr} = ${parseFloat(result.toFixed(4))}\``;
-                } catch { return null; }
-            },
+            // База знаний и паттернов (NLP)
+            patterns: [
+                { id: 'greeting', regex: /привет|старт|хай|здравствуй/i, responses: ["Привет! Я GmOne. Чем могу помочь?", "Здравствуй! Готов к работе."] },
+                { id: 'help', regex: /что ты умеешь|помощь|навыки/i, responses: ["Я умею отвечать на вопросы, считать, показывать погоду и следить за криптой. Спроси меня о чем угодно!"] },
+                { id: 'weather', regex: /погода|температура/i, action: 'weather' },
+                { id: 'crypto', regex: /крипта|биткоин|курс/i, action: 'crypto' },
+                { id: 'math', regex: /[\d+*/-]{3,}/, action: 'calc' },
+                { id: 'wiki', regex: /(кто такой|что такое|расскажи про|поясни за)\s+(.+)/i, action: 'wiki' }
+            ],
 
             async process(text) {
-                let msg = text.toLowerCase().trim();
-
-                if (/^(привет|старт|\/start|здравствуй|хай|добрый день)/.test(msg)) {
-                    return `Привет, **${userName}**! Я GmOne. Напиши название любого предмета или имени, чтобы узнать о нем, реши пример или узнай погоду. Готов помочь! 🚀`;
+                let msg = text.trim();
+                
+                // 1. Ищем совпадение по паттерну
+                for (let p of this.patterns) {
+                    if (p.regex.test(msg)) {
+                        if (p.action === 'weather') return await this.apiWeather(msg);
+                        if (p.action === 'crypto') return await this.apiCrypto();
+                        if (p.action === 'calc') return this.calc(msg);
+                        if (p.action === 'wiki') return await this.apiWiki(msg.match(p.regex)[2]);
+                        return p.responses[Math.floor(Math.random() * p.responses.length)];
+                    }
                 }
 
-                if (/(время|часы|который час|дата|сегодня)/.test(msg)) {
-                    const now = new Date();
-                    return `🕰 **${now.toLocaleTimeString('ru-RU', {hour: '2-digit', minute:'2-digit'})}**\n📅 ${now.toLocaleDateString('ru-RU', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}`;
-                }
-
-                // Калькулятор
-                let calcRes = this.calc(msg);
-                if (calcRes) return calcRes;
-
-                // Погода
-                let weatherMatch = msg.match(/(?:погода\s+(?:в\s+)?|город\s+)([а-яА-Яa-zA-Z-]+)/);
-                if (weatherMatch || msg === 'погода') {
-                    let w = await this.getWeather(weatherMatch ? weatherMatch[1] : 'Москве');
+                // 2. Если нет совпадения, пробуем "неявный поиск" (поиск термина)
+                if (msg.split(' ').length <= 3) {
+                    let w = await this.apiWiki(msg);
                     if (w) return w;
                 }
 
-                // Крипта
-                if (/(крипт|биткоин|курс|валют)/.test(msg)) {
-                    let c = await this.getCrypto();
-                    if (c) return c;
-                }
+                return "Интересный вопрос. Я еще учусь, поэтому пока не уверен в ответе. Попробуй спросить что-то другое или используй мои навыки (погода, крипта, вычисления).";
+            },
 
-                // Неявный или явный поиск (с картинками)
-                let wikiQuery = msg.replace(/что такое|кто так(?:ой|ая|ие)|расскажи про/g, '').trim();
-                if (wikiQuery.split(/\s+/).length <= 4) {
-                    let autoWiki = await this.getWiki(wikiQuery);
-                    if (autoWiki) return autoWiki;
-                }
+            // --- МОДУЛИ ---
+            calc(expr) { try { return "🧮 Результат: " + new Function('return ' + expr.replace(/[^0-9+\-*/().]/g, ''))(); } catch { return "Ошибка в расчетах."; } },
+            
+            async apiWeather(msg) {
+                let city = msg.split(' ').pop();
+                try {
+                    let geo = await (await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${city}&count=1`)).json();
+                    if (!geo.results) return "Город не найден.";
+                    let w = (await (await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${geo.results[0].latitude}&longitude=${geo.results[0].longitude}&current_weather=true`)).json()).current_weather;
+                    return `🌤 В ${geo.results[0].name} сейчас ${w.temperature}°C, ветер ${w.windspeed} км/ч.`;
+                } catch { return "Ошибка погоды."; }
+            },
+            
+            async apiCrypto() {
+                try {
+                    let d = await (await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,the-open-network&vs_currencies=usd')).json();
+                    return `📈 BTC: $${d.bitcoin.usd} | ETH: $${d.ethereum.usd} | TON: $${d['the-open-network'].usd}`;
+                } catch { return "Ошибка крипты."; }
+            },
 
-                return "К сожалению, я не нашел точного ответа. Проверь правильность написания или посмотри доступные функции в меню **Навыки**. 🤖";
+            async apiWiki(query) {
+                try {
+                    let data = await (await fetch(`https://ru.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(query)}`)).json();
+                    return data.extract ? `📚 **${data.title}**\n${data.extract}` : null;
+                } catch { return null; }
             }
         };
 
-        // --- УПРАВЛЕНИЕ ИНТЕРФЕЙСОМ ---
-        let history = JSON.parse(localStorage.getItem('gmone_v4_hist')) || [];
-
-        function renderHistory() {
-            $chat.innerHTML = '';
-            if (history.length === 0) {
-                appendMsg(`Привет! Я твой ИИ-ассистент GmOne. Попробуй написать мне: **Илон Маск**, **Курс крипты** или **250 * 15**.`, 'bot', false, true);
-            } else {
-                history.forEach(h => appendMsg(h.text, h.sender, false, true));
-            }
+        // --- UI ---
+        async function sendMessage() {
+            let val = document.getElementById('userInput').value;
+            if(!val) return;
+            document.getElementById('userInput').value = '';
+            appendMsg(val, 'user');
+            
+            let response = await Brain.process(val);
+            appendMsg(response, 'bot');
         }
 
-        function appendMsg(text, sender, save = true, noAnim = false) {
-            const wrap = document.createElement('div');
+        function appendMsg(text, sender) {
+            let wrap = document.createElement('div');
             wrap.className = `message-wrapper ${sender}`;
-            if (noAnim) wrap.style.animation = 'none';
-
-            let avatarHTML = sender === 'bot' 
-                ? `<div class="avatar"><img class="bot-img" src="${BOT_LOGO_URL}" onerror="this.style.display='none'; this.parentElement.textContent='🤖';"></div>` 
-                : `<div class="avatar avatar-user">${userName.charAt(0).toUpperCase()}</div>`;
-
-            const msgDiv = document.createElement('div');
-            msgDiv.className = `message ${sender}`;
-            msgDiv.innerHTML = sender === 'bot' ? marked.parse(text) : text;
-
-            wrap.innerHTML = avatarHTML;
-            wrap.appendChild(msgDiv);
-            $chat.appendChild(wrap);
-            
-            // Плавный скролл с небольшим таймаутом для рендера картинок
-            setTimeout(() => {
-                window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-                $chat.scrollTo({ top: $chat.scrollHeight, behavior: 'smooth' });
-            }, 50);
-
-            if (save) {
-                history.push({ text, sender });
-                if (history.length > 40) history.shift();
-                localStorage.setItem('gmone_v4_hist', JSON.stringify(history));
-            }
+            wrap.innerHTML = `<div class="avatar"><img class="bot-img" src="${BOT_LOGO_URL}" onerror="this.style.display='none'"></div><div class="message ${sender}">${marked.parse(text)}</div>`;
+            document.getElementById('chat').appendChild(wrap);
         }
 
-        function toggleTyping(show) {
-            if (show) {
-                const wrap = document.createElement('div');
-                wrap.className = `message-wrapper bot`;
-                wrap.id = 'typing';
-                wrap.innerHTML = `<div class="avatar"><img class="bot-img" src="${BOT_LOGO_URL}" onerror="this.style.display='none'; this.parentElement.textContent='🤖';"></div><div class="message bot"><div class="typing"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>`;
-                $chat.appendChild(wrap);
-                $chat.scrollTo({ top: $chat.scrollHeight, behavior: 'smooth' });
-            } else {
-                document.getElementById('typing')?.remove();
-            }
-        }
-
-        // Динамическая кнопка
-        function checkInput() {
-            if ($input.value.trim().length > 0) $sendBtn.classList.remove('disabled');
-            else $sendBtn.classList.add('disabled');
-        }
-
-        let isProcessing = false;
-
-        async function sendMessage(overrideText = null) {
-            if (isProcessing) return; 
-            const text = overrideText || $input.value.trim();
-            if (!text) return;
-
-            isProcessing = true;
-            $sendBtn.classList.add('disabled'); 
-            vibrate('light');
-            
-            $input.value = '';
-            appendMsg(text, 'user');
-            toggleTyping(true);
-
-            const thinkingTime = Math.random() * 500 + 400; // 0.4 - 0.9s
-            const response = await Brain.process(text);
-
-            setTimeout(() => {
-                toggleTyping(false);
-                appendMsg(response, 'bot');
-                if(tg?.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
-                isProcessing = false;
-                checkInput(); 
-            }, thinkingTime);
-        }
-
-        function handleKeyPress(e) { if (e.key === 'Enter') sendMessage(); }
-
-        function clearChat() {
-            vibrate('medium');
-            history = [];
-            localStorage.removeItem('gmone_v4_hist');
-            renderHistory();
-        }
-
-        function switchTab(tabId, element) {
-            vibrate('light');
+        function clearChat() { localStorage.clear(); location.reload(); }
+        function switchTab(tabId, el) { 
             document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-            
-            document.getElementById(`screen-${tabId}`).classList.add('active');
-            element.classList.add('active');
-            
-            // Прячем поле ввода на других экранах
-            $inputBox.style.display = tabId === 'chat' ? 'flex' : 'none';
-            
-            if(tabId === 'chat') setTimeout(() => $chat.scrollTo({ top: $chat.scrollHeight }), 50);
+            document.getElementById('screen-'+tabId).classList.add('active');
         }
-
-        // Инициализация
-        renderHistory();
+        function handleKeyPress(e) { if(e.key==='Enter') sendMessage(); }
     </script>
 </body>
 </html>
