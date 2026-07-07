@@ -82,6 +82,7 @@
             position: relative;
             z-index: 100;
             box-shadow: var(--shadow);
+            flex-shrink: 0;
         }
 
         .logo {
@@ -155,6 +156,13 @@
             animation: fadeIn 0.3s ease;
         }
 
+        /* ИСПРАВЛЕНИЕ: Разрешаем прокрутку для about-screen */
+        #about-screen {
+            overflow-y: auto;
+            overflow-x: hidden;
+            -webkit-overflow-scrolling: touch;
+        }
+
         @keyframes fadeIn {
             from { opacity: 0; }
             to { opacity: 1; }
@@ -163,11 +171,13 @@
         .chat-area {
             flex: 1;
             overflow-y: auto;
+            overflow-x: hidden;
             padding: 20px 16px 140px;
             display: flex;
             flex-direction: column;
             gap: 18px;
             scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
         }
 
         .chat-area::-webkit-scrollbar {
@@ -287,6 +297,7 @@
             font-size: 16px;
             color: var(--text);
             transition: all 0.2s;
+            min-width: 0;
         }
 
         input:focus {
@@ -308,6 +319,7 @@
             transition: all 0.2s;
             position: relative;
             overflow: hidden;
+            flex-shrink: 0;
         }
 
         .btn::before {
@@ -439,7 +451,7 @@
         }
 
         .about-content {
-            padding: 30px 20px;
+            padding: 30px 20px 100px;
             max-width: 560px;
             margin: 0 auto;
             width: 100%;
@@ -523,6 +535,19 @@
             
             .about-card {
                 padding: 24px 18px;
+            }
+            
+            .about-content {
+                padding: 20px 16px 100px;
+            }
+            
+            .header-actions {
+                gap: 8px;
+            }
+            
+            .clear-btn {
+                font-size: 13px;
+                padding: 6px 10px;
             }
         }
     </style>
@@ -803,10 +828,6 @@
                 document.getElementById('tts-btn').onclick = () => this.toggleTTS();
                 document.getElementById('mic-btn').onclick = () => this.startVoice();
                 document.getElementById('clear-btn').onclick = () => this.clearChat();
-
-                this.chat.addEventListener('scroll', () => {
-                    // Опционально: ленивая загрузка старых сообщений
-                }, { passive: true });
             },
 
             async send() {
@@ -888,6 +909,11 @@
                 document.getElementById(el.dataset.tab).classList.add('active');
                 el.classList.add('active');
                 el.setAttribute('aria-selected', 'true');
+                
+                // Прокрутка наверх при переключении на about-screen
+                if (el.dataset.tab === 'about-screen') {
+                    document.getElementById('about-screen').scrollTop = 0;
+                }
             },
 
             toggleTTS() {
