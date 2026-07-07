@@ -43,7 +43,8 @@
         }
         input { flex:1; padding:15px 18px; border-radius:16px; border:1.5px solid var(--border); background:var(--surface); font-size:16px; }
         input:focus { border-color:var(--accent); }
-        .btn { width:48px; height:48px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:23px; border:none; cursor:pointer; }
+        .btn { width:48px; height:48px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:23px; border:none; cursor:pointer; transition:transform 0.1s; }
+        .btn:active { transform: scale(0.92); }
         .send-btn { background:var(--accent); color:white; }
         .mic-btn { background:#10b981; color:white; }
         .nav-bar { position:fixed; bottom:0; left:0; right:0; height:70px; background:var(--surface); display:flex; border-top:1px solid var(--border); }
@@ -68,9 +69,25 @@
     </div>
 
     <div id="about-screen" class="screen">
-        <div style="padding:30px 20px; text-align:center;">
-            <h2>GmOne</h2>
-            <p style="color:var(--accent);">StartSmart</p>
+        <div style="padding:30px 20px; max-width:560px; margin:0 auto;">
+            <div style="background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:32px 24px; text-align:center;">
+                <div style="width:96px;height:96px;margin:0 auto 20px;border-radius:20px;overflow:hidden;">
+                    <img src="logo.png" style="width:100%;height:100%;object-fit:cover;">
+                </div>
+                <h2>GmOne</h2>
+                <p style="color:var(--accent); margin:8px 0 24px;">v1</p>
+                
+                <div style="text-align:left; font-size:14.8px; line-height:1.75;">
+                    <strong>Разработка:</strong> Tegcompany<br>
+                    <strong>Автор:</strong> Артём Юркевич<br><br>
+                    <strong>Особенности:</strong><br>
+                    • Встроенная векторная база знаний<br>
+                    • Поиск по смыслу (не только по ключевым словам)<br>
+                    • Поддержка контекста и Википедии<br>
+                    • Человеческий стиль общения<br><br>
+                    <strong>StartSmart</strong>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -86,49 +103,44 @@
     </div>
 
     <script>
-        // ====================== ВЕКТОРНАЯ БАЗА ДАННЫХ ======================
+        // ====================== УЛУЧШЕННАЯ ВЕКТОРНАЯ БАЗА ======================
         class VectorDB {
             constructor() {
                 this.knowledge = [];
             }
 
-            // Добавление знания
             add(text, metadata = {}) {
-                const vector = this.createVector(text);
+                const vector = this.createImprovedVector(text);
                 this.knowledge.push({ text, vector, metadata });
             }
 
-            // Простая векторизация (Bag-of-Words + важные слова)
-            createVector(text) {
+            createImprovedVector(text) {
                 const words = text.toLowerCase().match(/\w+/g) || [];
                 const vector = {};
+                const importantWords = new Set(['искусственный', 'интеллект', 'вектор', 'база', 'знаний', 'любовь', 'смысл', 'жизнь']);
+
                 words.forEach(word => {
-                    vector[word] = (vector[word] || 0) + 1;
+                    if (word.length > 2) {
+                        vector[word] = (vector[word] || 0) + (importantWords.has(word) ? 2.5 : 1);
+                    }
                 });
                 return vector;
             }
 
-            // Косинусное сходство
             cosineSimilarity(vec1, vec2) {
                 let dot = 0, norm1 = 0, norm2 = 0;
                 for (let key in vec1) {
                     dot += (vec1[key] || 0) * (vec2[key] || 0);
-                    norm1 += vec1[key] ** 2;
+                    norm1 += (vec1[key] || 0) ** 2;
                 }
-                for (let key in vec2) {
-                    norm2 += vec2[key] ** 2;
-                }
+                for (let key in vec2) norm2 += (vec2[key] || 0) ** 2;
                 return dot / (Math.sqrt(norm1) * Math.sqrt(norm2) + 0.0001);
             }
 
-            // Поиск по смыслу
             search(query, topK = 3) {
-                const qVector = this.createVector(query);
+                const qVector = this.createImprovedVector(query);
                 return this.knowledge
-                    .map(item => ({
-                        ...item,
-                        similarity: this.cosineSimilarity(qVector, item.vector)
-                    }))
+                    .map(item => ({ ...item, similarity: this.cosineSimilarity(qVector, item.vector) }))
                     .sort((a, b) => b.similarity - a.similarity)
                     .slice(0, topK);
             }
@@ -141,47 +153,42 @@
             ttsEnabled: true,
 
             initKnowledge() {
-                // ← Здесь можно сильно расширять базу
                 const baseKnowledge = [
                     "Искусственный интеллект — это системы, способные выполнять задачи, требующие человеческого разума.",
-                    "Векторная база данных позволяет искать информацию по смыслу, а не по точным словам.",
-                    "GmOne — это твой личный помощник, который использует векторный поиск.",
+                    "Векторная база данных позволяет искать информацию по смыслу, а не только по ключевым словам.",
+                    "GmOne — это личный помощник от Tegcompany, использующий векторный поиск.",
                     "Любовь — это желание счастья другому человеку.",
-                    "Смысл жизни каждый определяет сам. Часто он заключается в росте и помощи другим.",
+                    "Смысл жизни каждый определяет сам. Часто он заключается в росте, любви и помощи другим.",
                     "Программирование учит думать логически и превращать идеи в реальность.",
-                    "Минск — столица Беларуси, город с богатой историей."
+                    "Минск — столица Беларуси, красивый и зелёный город.",
+                    "Tegcompany — компания, занимающаяся разработкой современных цифровых решений."
                 ];
-
                 baseKnowledge.forEach(text => this.db.add(text));
             },
 
             async think(input) {
                 this.history.push({ role: "user", content: input });
-
-                // Поиск в векторной базе
                 const results = this.db.search(input, 3);
-                const bestMatch = results[0];
+                const best = results[0];
 
-                if (bestMatch && bestMatch.similarity > 0.15) {
-                    return bestMatch.text + "\n\n(найдено по смыслу)";
+                if (best && best.similarity > 0.18) {
+                    return best.text + "\n\n(найдено по смыслу в базе знаний)";
                 }
 
-                // Википедия как fallback
                 if (/(кто такой|кто такая|что такое|расскажи про|инфа о)/.test(input.toLowerCase())) {
                     return await this.fetchWikipedia(input);
                 }
 
-                // Обычный ответ
-                return this.generateResponse(input);
+                return this.generateSmartResponse(input);
             },
 
-            generateResponse(input) {
+            generateSmartResponse(input) {
                 const lower = input.toLowerCase();
                 if (lower.includes("привет") || lower.includes("здравствуй")) 
-                    return "Привет! 👋 Я использую векторный поиск, поэтому лучше понимаю смысл твоих вопросов.";
-                if (lower.includes("как дела")) 
-                    return "Отлично! Постоянно улучшаюсь благодаря нашим разговорам.";
-                return `Интересный вопрос: "${input}".\n\nЯ поискал в своей векторной базе знаний, но давай уточним — что именно тебя интересует?`;
+                    return "Привет! 👋 Я GmOne с векторным поиском. Чем могу помочь?";
+                if (lower.includes("как дела") || lower.includes("как ты")) 
+                    return "Спасибо, хорошо! Постоянно учусь и улучшаюсь благодаря нашим разговорам.";
+                return `Хороший вопрос: "${input}".\n\nЯ поискал в своей векторной базе, но давай разберём подробнее — что именно тебя интересует?`;
             },
 
             async fetchWikipedia(text) {
@@ -192,7 +199,7 @@
                     const data = await res.json();
                     return data.extract ? `**${data.title}**\n\n${data.extract.substring(0, 450)}...` : "Не нашёл точной информации.";
                 } catch {
-                    return "Не удалось получить данные из Википедии.";
+                    return "Не удалось подключиться к Википедии.";
                 }
             }
         };
@@ -291,7 +298,7 @@
             },
 
             clearChat() {
-                if (confirm("Очистить чат?")) {
+                if (confirm("Очистить весь чат?")) {
                     GmOne.history = [];
                     this.chat.innerHTML = '';
                 }
@@ -304,7 +311,7 @@
 
             if (GmOne.history.length === 0) {
                 setTimeout(() => {
-                    GmOneUI.appendMessage("Привет! Теперь я использую **векторный поиск**.\n\nСпрашивай что угодно — я буду искать по смыслу.", "bot");
+                    GmOneUI.appendMessage("Привет! Я GmOne.\n\nСпрашивай что угодно.", "bot");
                 }, 400);
             }
         };
