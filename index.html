@@ -3,124 +3,606 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>GmOne</title>
+    <meta name="theme-color" content="#2563eb">
+    <title>GmOne — Векторный ИИ</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
     <style>
         :root {
-            --bg: #f8fafc; --surface: #ffffff; --text: #1e293b;
-            --accent: #2563eb; --bubble-bot: #f1f5f9; --bubble-user: #2563eb;
-            --border: #e2e8f0;
+            --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --bg: #f8fafc;
+            --surface: rgba(255, 255, 255, 0.85);
+            --surface-solid: #ffffff;
+            --text: #1e293b;
+            --text-secondary: #64748b;
+            --accent: #2563eb;
+            --accent-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --bubble-bot: rgba(241, 245, 249, 0.9);
+            --bubble-user: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --border: rgba(226, 232, 240, 0.6);
+            --shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.15);
+            --blur: blur(20px);
         }
+
         @media (prefers-color-scheme: dark) {
             :root {
-                --bg: #0a0a0a; --surface: #121212; --text: #f8fafc;
-                --bubble-bot: #1c1c1e; --border: #2c2c2e;
+                --bg: #0a0a0a;
+                --surface: rgba(18, 18, 18, 0.85);
+                --surface-solid: #121212;
+                --text: #f8fafc;
+                --text-secondary: #94a3b8;
+                --bubble-bot: rgba(28, 28, 30, 0.9);
+                --border: rgba(44, 44, 46, 0.6);
+                --shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+                --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.5);
             }
         }
-        * { box-sizing: border-box; }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background: var(--bg); color: var(--text); margin: 0;
-            height: 100dvh; overflow: hidden; display: flex; flex-direction: column;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            height: 100dvh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            position: relative;
         }
-        .header { background: var(--surface); padding: env(safe-area-inset-top,12px) 16px 10px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); }
-        .logo { font-size:21px; color:var(--accent); font-weight:800; display:flex; align-items:center; gap:7px; }
-        .screen { display:none; flex:1; flex-direction:column; overflow:hidden; }
-        .screen.active { display:flex; }
-        .chat-area { flex:1; overflow-y:auto; padding:20px 16px 140px; display:flex; flex-direction:column; gap:18px; }
-        .msg-wrap { display:flex; gap:12px; animation:messageIn 0.4s ease; max-width:85%; }
-        .msg-wrap.user { margin-left:auto; flex-direction:row-reverse; }
-        .avatar { width:36px; height:36px; border-radius:11px; overflow:hidden; flex-shrink:0; }
-        .msg { padding:14px 17px; border-radius:18px; font-size:15.4px; line-height:1.5; }
-        .msg.bot { background:var(--bubble-bot); border:1px solid var(--border); border-bottom-left-radius:6px; }
-        .msg.user { background:var(--bubble-user); color:#fff; border-bottom-right-radius:6px; }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--bg-gradient);
+            opacity: 0.03;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .header {
+            background: var(--surface);
+            backdrop-filter: var(--blur);
+            -webkit-backdrop-filter: var(--blur);
+            padding: env(safe-area-inset-top, 12px) 16px 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+            position: relative;
+            z-index: 100;
+            box-shadow: var(--shadow);
+        }
+
+        .logo {
+            font-size: 21px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .icon-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 12px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .icon-btn:hover {
+            background: var(--border);
+            transform: scale(1.05);
+        }
+
+        .icon-btn:active {
+            transform: scale(0.95);
+        }
+
+        .clear-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            padding: 8px 12px;
+            border-radius: 12px;
+            transition: all 0.2s;
+        }
+
+        .clear-btn:hover {
+            background: var(--border);
+            color: var(--text);
+        }
+
+        .screen {
+            display: none;
+            flex: 1;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+            z-index: 1;
+        }
+
+        .screen.active {
+            display: flex;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .chat-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px 16px 140px;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+            scroll-behavior: smooth;
+        }
+
+        .chat-area::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .chat-area::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .chat-area::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
+
+        .msg-wrap {
+            display: flex;
+            gap: 12px;
+            animation: messageIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            max-width: 85%;
+        }
+
+        .msg-wrap.user {
+            margin-left: auto;
+            flex-direction: row-reverse;
+        }
+
+        @keyframes messageIn {
+            from {
+                opacity: 0;
+                transform: translateY(25px) scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 12px;
+            overflow: hidden;
+            flex-shrink: 0;
+            background: var(--accent-gradient);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 18px;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+
+        .avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .msg {
+            padding: 14px 17px;
+            border-radius: 18px;
+            font-size: 15.4px;
+            line-height: 1.6;
+            word-wrap: break-word;
+            position: relative;
+        }
+
+        .msg.bot {
+            background: var(--bubble-bot);
+            backdrop-filter: var(--blur);
+            -webkit-backdrop-filter: var(--blur);
+            border: 1px solid var(--border);
+            border-bottom-left-radius: 6px;
+            box-shadow: var(--shadow);
+        }
+
+        .msg.user {
+            background: var(--bubble-user);
+            color: #fff;
+            border-bottom-right-radius: 6px;
+            box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4);
+        }
+
+        .msg strong {
+            color: var(--accent);
+            font-weight: 700;
+        }
+
+        .msg.user strong {
+            color: #fff;
+        }
+
         .input-area {
-            position:fixed; bottom:70px; left:0; right:0; padding:12px 16px;
-            background:var(--bg); border-top:1px solid var(--border);
-            display:flex; gap:10px; align-items:end; z-index:95;
+            position: fixed;
+            bottom: 70px;
+            left: 0;
+            right: 0;
+            padding: 12px 16px;
+            background: var(--surface);
+            backdrop-filter: var(--blur);
+            -webkit-backdrop-filter: var(--blur);
+            border-top: 1px solid var(--border);
+            display: flex;
+            gap: 10px;
+            align-items: end;
+            z-index: 95;
+            box-shadow: var(--shadow);
         }
-        input { flex:1; padding:15px 18px; border-radius:16px; border:1.5px solid var(--border); background:var(--surface); font-size:16px; }
-        input:focus { border-color:var(--accent); }
-        .btn { width:48px; height:48px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:23px; border:none; cursor:pointer; transition:transform 0.1s; }
-        .btn:active { transform: scale(0.92); }
-        .send-btn { background:var(--accent); color:white; }
-        .mic-btn { background:#10b981; color:white; }
-        .nav-bar { position:fixed; bottom:0; left:0; right:0; height:70px; background:var(--surface); display:flex; border-top:1px solid var(--border); }
-        .nav-item { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:12.5px; font-weight:600; color:#64748b; cursor:pointer; }
-        .nav-item.active { color:var(--accent); }
-        .thinking { font-style:italic; color:#64748b; }
-        @keyframes messageIn { from {opacity:0; transform:translateY(25px);} to {opacity:1; transform:translateY(0);} }
+
+        input {
+            flex: 1;
+            padding: 15px 18px;
+            border-radius: 16px;
+            border: 1.5px solid var(--border);
+            background: var(--surface-solid);
+            font-size: 16px;
+            color: var(--text);
+            transition: all 0.2s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .btn {
+            width: 48px;
+            height: 48px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .btn:active::before {
+            width: 300px;
+            height: 300px;
+        }
+
+        .btn:active {
+            transform: scale(0.92);
+        }
+
+        .send-btn {
+            background: var(--accent-gradient);
+            color: white;
+            box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4);
+        }
+
+        .mic-btn {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            box-shadow: 0 4px 16px rgba(16, 185, 129, 0.4);
+        }
+
+        .nav-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 70px;
+            background: var(--surface);
+            backdrop-filter: var(--blur);
+            -webkit-backdrop-filter: var(--blur);
+            display: flex;
+            border-top: 1px solid var(--border);
+            z-index: 100;
+            box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.05);
+        }
+
+        .nav-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 12.5px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+
+        .nav-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 3px;
+            background: var(--accent-gradient);
+            border-radius: 0 0 3px 3px;
+            transition: width 0.3s;
+        }
+
+        .nav-item.active {
+            color: var(--accent);
+        }
+
+        .nav-item.active::before {
+            width: 40px;
+        }
+
+        .nav-item:active {
+            transform: scale(0.95);
+        }
+
+        .thinking {
+            font-style: italic;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .thinking-dots {
+            display: inline-flex;
+            gap: 4px;
+        }
+
+        .thinking-dots span {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--accent);
+            animation: thinking 1.4s infinite;
+        }
+
+        .thinking-dots span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .thinking-dots span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes thinking {
+            0%, 60%, 100% {
+                transform: translateY(0);
+                opacity: 0.7;
+            }
+            30% {
+                transform: translateY(-10px);
+                opacity: 1;
+            }
+        }
+
+        .about-content {
+            padding: 30px 20px;
+            max-width: 560px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .about-card {
+            background: var(--surface);
+            backdrop-filter: var(--blur);
+            -webkit-backdrop-filter: var(--blur);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 32px 24px;
+            text-align: center;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .about-logo {
+            width: 96px;
+            height: 96px;
+            margin: 0 auto 20px;
+            border-radius: 24px;
+            overflow: hidden;
+            background: var(--accent-gradient);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            box-shadow: 0 8px 32px rgba(37, 99, 235, 0.3);
+        }
+
+        .about-logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .about-card h2 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 800;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .about-version {
+            color: var(--accent);
+            margin: 8px 0 24px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .about-info {
+            text-align: left;
+            font-size: 14.8px;
+            line-height: 1.8;
+        }
+
+        .about-info strong {
+            color: var(--accent);
+            font-weight: 700;
+        }
+
+        .skeleton {
+            background: linear-gradient(90deg, var(--border) 25%, var(--surface) 50%, var(--border) 75%);
+            background-size: 200% 100%;
+            animation: loading 1.5s infinite;
+            border-radius: 8px;
+        }
+
+        @keyframes loading {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        @media (max-width: 480px) {
+            .msg-wrap {
+                max-width: 90%;
+            }
+            
+            .about-card {
+                padding: 24px 18px;
+            }
+        }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <div class="logo">GmOne <span>🧠</span></div>
-        <div style="display:flex;gap:14px;align-items:center;">
-            <button id="tts-btn" style="background:none;border:none;font-size:26px;cursor:pointer;">🔊</button>
-            <button onclick="GmOneUI.clearChat()" style="background:none;border:none;color:var(--text);font-size:14px;">Очистить</button>
+        <div class="logo">GmOne 🧠</div>
+        <div class="header-actions">
+            <button class="icon-btn" id="tts-btn" aria-label="Включить/выключить озвучку">🔊</button>
+            <button class="clear-btn" id="clear-btn" aria-label="Очистить чат">Очистить</button>
         </div>
     </div>
 
     <div id="chat-screen" class="screen active">
-        <div class="chat-area" id="chat"></div>
+        <div class="chat-area" id="chat" role="log" aria-live="polite"></div>
     </div>
 
     <div id="about-screen" class="screen">
-        <div style="padding:30px 20px; max-width:560px; margin:0 auto;">
-            <div style="background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:32px 24px; text-align:center;">
-                <div style="width:96px;height:96px;margin:0 auto 20px;border-radius:20px;overflow:hidden;">
-                    <img src="logo.png" style="width:100%;height:100%;object-fit:cover;">
+        <div class="about-content">
+            <div class="about-card">
+                <div class="about-logo">
+                    <img src="logo.png" alt="GmOne Logo" onerror="this.style.display='none'; this.parentElement.textContent='🧠';">
                 </div>
                 <h2>GmOne</h2>
-                <p style="color:var(--accent); margin:8px 0 24px;">v1</p>
+                <p class="about-version">v1</p>
                 
-                <div style="text-align:left; font-size:14.8px; line-height:1.75;">
+                <div class="about-info">
                     <strong>Разработка:</strong> Tegcompany<br>
                     <strong>Автор:</strong> Артём Юркевич<br><br>
                     <strong>Особенности:</strong><br>
                     • Встроенная векторная база знаний<br>
-                    • Поиск по смыслу (не только по ключевым словам)<br>
+                    • Поиск по смыслу (семантический анализ)<br>
                     • Поддержка контекста и Википедии<br>
-                    • Человеческий стиль общения<br><br>
-                    <strong>StartSmart</strong>
+                    • Человеческий стиль общения<br>
+                    • Голосовой ввод и озвучка<br>
+                    • Сохранение истории диалогов<br><br>
+                    <strong>StartSmart</strong> 🚀
                 </div>
             </div>
         </div>
     </div>
 
     <div class="input-area">
-        <input type="text" id="userInput" placeholder="Спроси меня о чём угодно..." autocomplete="off">
-        <button class="btn mic-btn" id="mic-btn">🎤</button>
-        <button class="btn send-btn" id="send-btn">➤</button>
+        <input type="text" id="userInput" placeholder="Спроси меня о чём угодно..." autocomplete="off" aria-label="Введите сообщение">
+        <button class="btn mic-btn" id="mic-btn" aria-label="Голосовой ввод">🎤</button>
+        <button class="btn send-btn" id="send-btn" aria-label="Отправить сообщение">➤</button>
     </div>
 
     <div class="nav-bar">
-        <div class="nav-item active" data-tab="chat-screen">Чат</div>
-        <div class="nav-item" data-tab="about-screen">О проекте</div>
+        <div class="nav-item active" data-tab="chat-screen" role="tab" aria-selected="true">
+            💬 Чат
+        </div>
+        <div class="nav-item" data-tab="about-screen" role="tab" aria-selected="false">
+            ℹ️ О проекте
+        </div>
     </div>
 
     <script>
-        // ====================== УЛУЧШЕННАЯ ВЕКТОРНАЯ БАЗА ======================
+        // ====================== ОПТИМИЗИРОВАННАЯ ВЕКТОРНАЯ БАЗА ======================
         class VectorDB {
             constructor() {
                 this.knowledge = [];
+                this.cache = new Map();
             }
 
             add(text, metadata = {}) {
-                const vector = this.createImprovedVector(text);
+                const vector = this.createVector(text);
                 this.knowledge.push({ text, vector, metadata });
+                this.cache.clear();
             }
 
-            createImprovedVector(text) {
+            createVector(text) {
                 const words = text.toLowerCase().match(/\w+/g) || [];
                 const vector = {};
-                const importantWords = new Set(['искусственный', 'интеллект', 'вектор', 'база', 'знаний', 'любовь', 'смысл', 'жизнь']);
+                const stopwords = new Set(['и', 'в', 'на', 'с', 'по', 'для', 'что', 'как', 'это', 'то']);
+                const importantWords = new Set(['искусственный', 'интеллект', 'вектор', 'база', 'знаний', 'любовь', 'смысл', 'жизнь', 'помощник', 'поиск']);
 
                 words.forEach(word => {
-                    if (word.length > 2) {
+                    if (word.length > 2 && !stopwords.has(word)) {
                         vector[word] = (vector[word] || 0) + (importantWords.has(word) ? 2.5 : 1);
                     }
                 });
@@ -129,20 +611,37 @@
 
             cosineSimilarity(vec1, vec2) {
                 let dot = 0, norm1 = 0, norm2 = 0;
-                for (let key in vec1) {
-                    dot += (vec1[key] || 0) * (vec2[key] || 0);
-                    norm1 += (vec1[key] || 0) ** 2;
+                const keys = new Set([...Object.keys(vec1), ...Object.keys(vec2)]);
+                
+                for (let key of keys) {
+                    const v1 = vec1[key] || 0;
+                    const v2 = vec2[key] || 0;
+                    dot += v1 * v2;
+                    norm1 += v1 * v1;
+                    norm2 += v2 * v2;
                 }
-                for (let key in vec2) norm2 += (vec2[key] || 0) ** 2;
-                return dot / (Math.sqrt(norm1) * Math.sqrt(norm2) + 0.0001);
+                
+                const denominator = Math.sqrt(norm1) * Math.sqrt(norm2);
+                return denominator === 0 ? 0 : dot / denominator;
             }
 
             search(query, topK = 3) {
-                const qVector = this.createImprovedVector(query);
-                return this.knowledge
-                    .map(item => ({ ...item, similarity: this.cosineSimilarity(qVector, item.vector) }))
+                const cacheKey = `${query}_${topK}`;
+                if (this.cache.has(cacheKey)) {
+                    return this.cache.get(cacheKey);
+                }
+
+                const qVector = this.createVector(query);
+                const results = this.knowledge
+                    .map(item => ({
+                        ...item,
+                        similarity: this.cosineSimilarity(qVector, item.vector)
+                    }))
                     .sort((a, b) => b.similarity - a.similarity)
                     .slice(0, topK);
+
+                this.cache.set(cacheKey, results);
+                return results;
             }
         }
 
@@ -151,6 +650,44 @@
             db: new VectorDB(),
             history: [],
             ttsEnabled: true,
+            isProcessing: false,
+
+            init() {
+                this.loadHistory();
+                this.loadSettings();
+                this.initKnowledge();
+            },
+
+            loadHistory() {
+                try {
+                    const saved = localStorage.getItem('gmone_history');
+                    if (saved) {
+                        this.history = JSON.parse(saved);
+                    }
+                } catch (e) {
+                    console.warn('Failed to load history:', e);
+                    this.history = [];
+                }
+            },
+
+            saveHistory() {
+                try {
+                    localStorage.setItem('gmone_history', JSON.stringify(this.history.slice(-50)));
+                } catch (e) {
+                    console.warn('Failed to save history:', e);
+                }
+            },
+
+            loadSettings() {
+                try {
+                    const tts = localStorage.getItem('gmone_tts');
+                    if (tts !== null) {
+                        this.ttsEnabled = tts === 'true';
+                    }
+                } catch (e) {
+                    console.warn('Failed to load settings:', e);
+                }
+            },
 
             initKnowledge() {
                 const baseKnowledge = [
@@ -167,19 +704,35 @@
             },
 
             async think(input) {
+                if (this.isProcessing) {
+                    return "Подожди, я ещё обрабатываю предыдущий вопрос...";
+                }
+
+                this.isProcessing = true;
                 this.history.push({ role: "user", content: input });
-                const results = this.db.search(input, 3);
-                const best = results[0];
 
-                if (best && best.similarity > 0.18) {
-                    return best.text + "\n\n(найдено по смыслу в базе знаний)";
+                try {
+                    const results = this.db.search(input, 3);
+                    const best = results[0];
+
+                    let response;
+                    if (best && best.similarity > 0.18) {
+                        response = best.text + "\n\n_(найдено по смыслу в базе знаний)_";
+                    } else if (/(кто такой|кто такая|что такое|расскажи про|инфа о)/.test(input.toLowerCase())) {
+                        response = await this.fetchWikipedia(input);
+                    } else {
+                        response = this.generateSmartResponse(input);
+                    }
+
+                    this.history.push({ role: "bot", content: response });
+                    this.saveHistory();
+                    return response;
+                } catch (error) {
+                    console.error('Error in think:', error);
+                    return "Произошла ошибка при обработке запроса. Попробуй ещё раз.";
+                } finally {
+                    this.isProcessing = false;
                 }
-
-                if (/(кто такой|кто такая|что такое|расскажи про|инфа о)/.test(input.toLowerCase())) {
-                    return await this.fetchWikipedia(input);
-                }
-
-                return this.generateSmartResponse(input);
             },
 
             generateSmartResponse(input) {
@@ -188,6 +741,11 @@
                     return "Привет! 👋 Я GmOne с векторным поиском. Чем могу помочь?";
                 if (lower.includes("как дела") || lower.includes("как ты")) 
                     return "Спасибо, хорошо! Постоянно учусь и улучшаюсь благодаря нашим разговорам.";
+                if (lower.includes("спасибо") || lower.includes("благодарю"))
+                    return "Всегда пожалуйста! Рад помочь 😊";
+                if (lower.includes("пока") || lower.includes("до свидания"))
+                    return "До встречи! Возвращайся, если будут вопросы 👋";
+                
                 return `Хороший вопрос: "${input}".\n\nЯ поискал в своей векторной базе, но давай разберём подробнее — что именно тебя интересует?`;
             },
 
@@ -196,9 +754,15 @@
                     const match = text.match(/(?:кто такой|кто такая|что такое|расскажи про)\s+(.+?)(?:\?|$)/i);
                     const q = match ? match[1].trim() : text;
                     const res = await fetch(`https://ru.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(q)}`);
+                    
+                    if (!res.ok) {
+                        return "Не нашёл точной информации в Википедии.";
+                    }
+                    
                     const data = await res.json();
                     return data.extract ? `**${data.title}**\n\n${data.extract.substring(0, 450)}...` : "Не нашёл точной информации.";
-                } catch {
+                } catch (error) {
+                    console.error('Wikipedia error:', error);
                     return "Не удалось подключиться к Википедии.";
                 }
             }
@@ -208,113 +772,217 @@
         const GmOneUI = {
             chat: null,
             input: null,
+            sendBtn: null,
+            debounceTimer: null,
 
             init() {
                 this.chat = document.getElementById('chat');
                 this.input = document.getElementById('userInput');
-                GmOne.initKnowledge();
+                this.sendBtn = document.getElementById('send-btn');
+                
+                GmOne.init();
                 this.renderHistory();
                 this.setupListeners();
+                this.updateTTSButton();
             },
 
             setupListeners() {
-                document.getElementById('send-btn').onclick = () => this.send();
-                this.input.onkeypress = e => e.key === 'Enter' && this.send();
-                document.querySelectorAll('.nav-item').forEach(el => el.onclick = () => this.switchTab(el));
+                this.sendBtn.onclick = () => this.send();
+                
+                this.input.onkeypress = e => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        this.send();
+                    }
+                };
+
+                document.querySelectorAll('.nav-item').forEach(el => {
+                    el.onclick = () => this.switchTab(el);
+                });
+
                 document.getElementById('tts-btn').onclick = () => this.toggleTTS();
                 document.getElementById('mic-btn').onclick = () => this.startVoice();
+                document.getElementById('clear-btn').onclick = () => this.clearChat();
+
+                this.chat.addEventListener('scroll', () => {
+                    // Опционально: ленивая загрузка старых сообщений
+                }, { passive: true });
             },
 
             async send() {
                 const text = this.input.value.trim();
-                if (!text) return;
+                if (!text || GmOne.isProcessing) return;
 
-                this.appendMessage(text, 'user');
-                this.input.value = '';
+                clearTimeout(this.debounceTimer);
+                this.debounceTimer = setTimeout(async () => {
+                    this.input.value = '';
+                    this.appendMessage(text, 'user');
 
-                const thinking = this.showThinking();
-                const response = await GmOne.think(text);
-                thinking.remove();
+                    const thinking = this.showThinking();
+                    const response = await GmOne.think(text);
+                    thinking.remove();
 
-                this.appendMessage(response, 'bot');
-                this.speak(response);
+                    this.appendMessage(response, 'bot');
+                    this.speak(response);
+                }, 100);
             },
 
             appendMessage(text, role) {
                 const wrap = document.createElement('div');
                 wrap.className = `msg-wrap ${role}`;
                 const isBot = role === 'bot';
-                wrap.innerHTML = isBot 
-                    ? `<div class="avatar"><img src="logo.png"></div><div class="msg bot">${marked.parse(text)}</div>`
-                    : `<div style="width:36px;height:36px;background:#64748b;color:white;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:20px;">👤</div><div class="msg user">${marked.parse(text)}</div>`;
+                
+                const avatar = isBot 
+                    ? `<div class="avatar"><img src="logo.png" alt="GmOne" onerror="this.style.display='none'; this.parentElement.textContent='🧠';" loading="lazy"></div>`
+                    : `<div class="avatar" style="background: linear-gradient(135deg, #64748b 0%, #475569 100%);">👤</div>`;
+                
+                wrap.innerHTML = `${avatar}<div class="msg ${role}">${marked.parse(text)}</div>`;
                 this.chat.appendChild(wrap);
-                this.chat.scrollTo({ top: this.chat.scrollHeight, behavior: 'smooth' });
+                
+                requestAnimationFrame(() => {
+                    this.chat.scrollTo({ top: this.chat.scrollHeight, behavior: 'smooth' });
+                });
             },
 
             showThinking() {
                 const wrap = document.createElement('div');
                 wrap.className = 'msg-wrap';
-                wrap.innerHTML = `<div class="avatar"><img src="logo.png"></div><div class="msg bot thinking">🧠 Ищу по векторам...</div>`;
+                wrap.innerHTML = `
+                    <div class="avatar"><img src="logo.png" alt="GmOne" onerror="this.style.display='none'; this.parentElement.textContent='🧠';" loading="lazy"></div>
+                    <div class="msg bot thinking">
+                        🧠 Думаю
+                        <div class="thinking-dots">
+                            <span></span>
+                            <span></span>
+                            <span></span>
+                        </div>
+                    </div>
+                `;
                 this.chat.appendChild(wrap);
-                this.chat.scrollTo({ top: this.chat.scrollHeight, behavior: 'smooth' });
+                
+                requestAnimationFrame(() => {
+                    this.chat.scrollTo({ top: this.chat.scrollHeight, behavior: 'smooth' });
+                });
+                
                 return wrap;
             },
 
             renderHistory() {
                 this.chat.innerHTML = '';
-                GmOne.history.forEach(m => this.appendMessage(m.content, m.role));
+                if (GmOne.history.length === 0) {
+                    setTimeout(() => {
+                        this.appendMessage("Привет! 👋 Я GmOne.\n\nСпрашивай что угодно — я найду ответ по смыслу!", "bot");
+                    }, 400);
+                } else {
+                    GmOne.history.forEach(m => this.appendMessage(m.content, m.role));
+                }
             },
 
             switchTab(el) {
                 document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+                document.querySelectorAll('.nav-item').forEach(i => {
+                    i.classList.remove('active');
+                    i.setAttribute('aria-selected', 'false');
+                });
+                
                 document.getElementById(el.dataset.tab).classList.add('active');
                 el.classList.add('active');
+                el.setAttribute('aria-selected', 'true');
             },
 
             toggleTTS() {
                 GmOne.ttsEnabled = !GmOne.ttsEnabled;
-                localStorage.setItem('gmone_tts', GmOne.ttsEnabled);
-                document.getElementById('tts-btn').textContent = GmOne.ttsEnabled ? '🔊' : '🔇';
+                try {
+                    localStorage.setItem('gmone_tts', GmOne.ttsEnabled);
+                } catch (e) {
+                    console.warn('Failed to save TTS setting:', e);
+                }
+                this.updateTTSButton();
+            },
+
+            updateTTSButton() {
+                const btn = document.getElementById('tts-btn');
+                btn.textContent = GmOne.ttsEnabled ? '🔊' : '🔇';
+                btn.setAttribute('aria-label', GmOne.ttsEnabled ? 'Выключить озвучку' : 'Включить озвучку');
             },
 
             speak(text) {
-                if (!GmOne.ttsEnabled || !speechSynthesis) return;
-                const u = new SpeechSynthesisUtterance(text.replace(/\*\*.*?\*\*/g, ''));
-                u.lang = 'ru-RU';
-                speechSynthesis.speak(u);
+                if (!GmOne.ttsEnabled || !window.speechSynthesis) return;
+                
+                try {
+                    window.speechSynthesis.cancel();
+                    const cleanText = text.replace(/\*\*.*?\*\*/g, '').replace(/_.*?_/g, '');
+                    const u = new SpeechSynthesisUtterance(cleanText);
+                    u.lang = 'ru-RU';
+                    u.rate = 1.0;
+                    u.pitch = 1.0;
+                    window.speechSynthesis.speak(u);
+                } catch (e) {
+                    console.warn('TTS error:', e);
+                }
             },
 
             startVoice() {
                 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-                if (!SR) return alert("Голосовой ввод не поддерживается");
+                if (!SR) {
+                    alert("Голосовой ввод не поддерживается в этом браузере");
+                    return;
+                }
+
                 const rec = new SR();
                 rec.lang = 'ru-RU';
+                rec.continuous = false;
+                rec.interimResults = false;
+
                 rec.onresult = e => {
-                    this.input.value = e.results[0][0].transcript;
+                    const transcript = e.results[0][0].transcript;
+                    this.input.value = transcript;
                     this.send();
                 };
-                rec.start();
+
+                rec.onerror = e => {
+                    console.error('Speech recognition error:', e);
+                    alert("Ошибка распознавания речи. Попробуй ещё раз.");
+                };
+
+                try {
+                    rec.start();
+                } catch (e) {
+                    console.error('Failed to start recognition:', e);
+                }
             },
 
             clearChat() {
-                if (confirm("Очистить весь чат?")) {
+                if (confirm("Очистить весь чат? Это действие нельзя отменить.")) {
                     GmOne.history = [];
+                    try {
+                        localStorage.removeItem('gmone_history');
+                    } catch (e) {
+                        console.warn('Failed to clear history:', e);
+                    }
                     this.chat.innerHTML = '';
+                    setTimeout(() => {
+                        this.appendMessage("Чат очищен! 🧹 Начнём сначала?", "bot");
+                    }, 300);
                 }
             }
         };
 
-        window.onload = () => {
-            if (Telegram?.WebApp) Telegram.WebApp.expand();
-            GmOneUI.init();
-
-            if (GmOne.history.length === 0) {
-                setTimeout(() => {
-                    GmOneUI.appendMessage("Привет! Я GmOne.\n\nСпрашивай что угодно.", "bot");
-                }, 400);
+        // ====================== ИНИЦИАЛИЗАЦИЯ ======================
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.Telegram?.WebApp) {
+                Telegram.WebApp.ready();
+                Telegram.WebApp.expand();
+                
+                if (Telegram.WebApp.colorScheme === 'dark') {
+                    document.documentElement.style.setProperty('--bg', '#0a0a0a');
+                    document.documentElement.style.setProperty('--surface', 'rgba(18, 18, 18, 0.85)');
+                    document.documentElement.style.setProperty('--text', '#f8fafc');
+                }
             }
-        };
+            
+            GmOneUI.init();
+        });
 
         window.GmOneUI = GmOneUI;
     </script>
