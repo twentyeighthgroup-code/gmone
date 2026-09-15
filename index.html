@@ -24,10 +24,25 @@
             --shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
             --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.15);
             --blur: blur(20px);
+            --success: #10b981;
+            --error: #ef4444;
+            --warning: #f59e0b;
+        }
+
+        [data-theme="dark"] {
+            --bg: #0a0a0a;
+            --surface: rgba(18, 18, 18, 0.85);
+            --surface-solid: #121212;
+            --text: #f8fafc;
+            --text-secondary: #94a3b8;
+            --bubble-bot: rgba(28, 28, 30, 0.9);
+            --border: rgba(44, 44, 46, 0.6);
+            --shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.5);
         }
 
         @media (prefers-color-scheme: dark) {
-            :root {
+            :root:not([data-theme="light"]) {
                 --bg: #0a0a0a;
                 --surface: rgba(18, 18, 18, 0.85);
                 --surface-solid: #121212;
@@ -55,6 +70,7 @@
             display: flex;
             flex-direction: column;
             position: relative;
+            transition: background 0.3s ease, color 0.3s ease;
         }
 
         body::before {
@@ -83,6 +99,7 @@
             z-index: 100;
             box-shadow: var(--shadow);
             flex-shrink: 0;
+            transition: all 0.3s ease;
         }
 
         .logo {
@@ -95,46 +112,101 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
+            animation: logoFloat 3s ease-in-out infinite;
+        }
+
+        @keyframes logoFloat {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-2px); }
         }
 
         .header-actions {
             display: flex;
-            gap: 12px;
+            gap: 8px;
             align-items: center;
         }
 
         .icon-btn {
             background: none;
             border: none;
-            font-size: 24px;
+            font-size: 22px;
             cursor: pointer;
             padding: 8px;
             border-radius: 12px;
-            transition: all 0.2s;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             display: flex;
             align-items: center;
             justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .icon-btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(37, 99, 235, 0.1);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+
+        .icon-btn:hover::before {
+            width: 300px;
+            height: 300px;
         }
 
         .icon-btn:hover {
             background: var(--border);
-            transform: scale(1.05);
+            transform: scale(1.1) rotate(5deg);
         }
 
         .icon-btn:active {
-            transform: scale(0.95);
+            transform: scale(0.9) rotate(-5deg);
+        }
+
+        .theme-toggle {
+            position: relative;
+        }
+
+        .theme-toggle .icon {
+            transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .theme-toggle.rotating .icon {
+            transform: rotate(360deg);
         }
 
         .clear-btn {
             background: none;
             border: none;
             color: var(--text-secondary);
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 500;
             cursor: pointer;
             padding: 8px 12px;
             border-radius: 12px;
-            transition: all 0.2s;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .clear-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(37, 99, 235, 0.1), transparent);
+            transition: left 0.5s;
+        }
+
+        .clear-btn:hover::before {
+            left: 100%;
         }
 
         .clear-btn:hover {
@@ -156,7 +228,6 @@
             animation: fadeIn 0.3s ease;
         }
 
-        /* ИСПРАВЛЕНИЕ: Разрешаем прокрутку для about-screen */
         #about-screen {
             overflow-y: auto;
             overflow-x: hidden;
@@ -164,8 +235,8 @@
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .chat-area {
@@ -229,6 +300,11 @@
             color: white;
             font-size: 18px;
             box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+            transition: transform 0.3s;
+        }
+
+        .avatar:hover {
+            transform: scale(1.1) rotate(5deg);
         }
 
         .avatar img {
@@ -244,6 +320,11 @@
             line-height: 1.6;
             word-wrap: break-word;
             position: relative;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .msg:hover {
+            transform: translateY(-2px);
         }
 
         .msg.bot {
@@ -255,11 +336,19 @@
             box-shadow: var(--shadow);
         }
 
+        .msg.bot:hover {
+            box-shadow: var(--shadow-lg);
+        }
+
         .msg.user {
             background: var(--bubble-user);
             color: #fff;
             border-bottom-right-radius: 6px;
             box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4);
+        }
+
+        .msg.user:hover {
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
         }
 
         .msg strong {
@@ -286,6 +375,7 @@
             align-items: end;
             z-index: 95;
             box-shadow: var(--shadow);
+            transition: all 0.3s ease;
         }
 
         input {
@@ -296,7 +386,7 @@
             background: var(--surface-solid);
             font-size: 16px;
             color: var(--text);
-            transition: all 0.2s;
+            transition: all 0.3s;
             min-width: 0;
         }
 
@@ -304,6 +394,7 @@
             outline: none;
             border-color: var(--accent);
             box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+            transform: scale(1.02);
         }
 
         .btn {
@@ -316,7 +407,7 @@
             font-size: 22px;
             border: none;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
             overflow: hidden;
             flex-shrink: 0;
@@ -344,16 +435,28 @@
             transform: scale(0.92);
         }
 
+        .btn:hover {
+            transform: scale(1.05);
+        }
+
         .send-btn {
             background: var(--accent-gradient);
             color: white;
             box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4);
         }
 
+        .send-btn:hover {
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
         .mic-btn {
             background: linear-gradient(135deg, #10b981 0%, #059669 100%);
             color: white;
             box-shadow: 0 4px 16px rgba(16, 185, 129, 0.4);
+        }
+
+        .mic-btn:hover {
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.6);
         }
 
         .nav-bar {
@@ -369,6 +472,7 @@
             border-top: 1px solid var(--border);
             z-index: 100;
             box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
         }
 
         .nav-item {
@@ -381,7 +485,7 @@
             font-weight: 600;
             color: var(--text-secondary);
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
         }
 
@@ -408,6 +512,10 @@
 
         .nav-item:active {
             transform: scale(0.95);
+        }
+
+        .nav-item:hover {
+            background: var(--border);
         }
 
         .thinking {
@@ -466,6 +574,11 @@
             padding: 32px 24px;
             text-align: center;
             box-shadow: var(--shadow-lg);
+            transition: transform 0.3s;
+        }
+
+        .about-card:hover {
+            transform: translateY(-5px);
         }
 
         .about-logo {
@@ -480,6 +593,12 @@
             justify-content: center;
             font-size: 48px;
             box-shadow: 0 8px 32px rgba(37, 99, 235, 0.3);
+            animation: logoPulse 2s ease-in-out infinite;
+        }
+
+        @keyframes logoPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
         }
 
         .about-logo img {
@@ -528,6 +647,160 @@
             100% { background-position: -200% 0; }
         }
 
+        .toast {
+            position: fixed;
+            top: 100px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-100px);
+            background: var(--surface-solid);
+            color: var(--text);
+            padding: 12px 24px;
+            border-radius: 12px;
+            box-shadow: var(--shadow-lg);
+            z-index: 1000;
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid var(--border);
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+
+        .toast.success {
+            border-left: 4px solid var(--success);
+        }
+
+        .toast.error {
+            border-left: 4px solid var(--error);
+        }
+
+        .toast.warning {
+            border-left: 4px solid var(--warning);
+        }
+
+        .onboarding-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            z-index: 2000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .onboarding-overlay.show {
+            display: flex;
+        }
+
+        .onboarding-card {
+            background: var(--surface-solid);
+            border-radius: 24px;
+            padding: 32px 24px;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            box-shadow: var(--shadow-lg);
+            animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(50px) scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .onboarding-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .onboarding-title {
+            font-size: 24px;
+            font-weight: 800;
+            margin-bottom: 12px;
+            background: var(--accent-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .onboarding-text {
+            font-size: 15px;
+            line-height: 1.6;
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+        }
+
+        .onboarding-btn {
+            background: var(--accent-gradient);
+            color: white;
+            border: none;
+            padding: 14px 32px;
+            border-radius: 14px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4);
+        }
+
+        .onboarding-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .onboarding-btn:active {
+            transform: scale(0.95);
+        }
+
+        .connection-status {
+            position: fixed;
+            top: 80px;
+            right: 16px;
+            padding: 8px 16px;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 600;
+            z-index: 150;
+            opacity: 0;
+            transform: translateX(100px);
+            transition: all 0.3s;
+        }
+
+        .connection-status.show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .connection-status.offline {
+            background: var(--error);
+            color: white;
+        }
+
+        .connection-status.online {
+            background: var(--success);
+            color: white;
+        }
+
         @media (max-width: 480px) {
             .msg-wrap {
                 max-width: 90%;
@@ -542,12 +815,33 @@
             }
             
             .header-actions {
-                gap: 8px;
+                gap: 6px;
             }
             
             .clear-btn {
-                font-size: 13px;
+                font-size: 12px;
                 padding: 6px 10px;
+            }
+
+            .icon-btn {
+                font-size: 20px;
+                padding: 6px;
+            }
+
+            .onboarding-card {
+                padding: 24px 18px;
+            }
+
+            .onboarding-icon {
+                font-size: 48px;
+            }
+
+            .onboarding-title {
+                font-size: 20px;
+            }
+
+            .onboarding-text {
+                font-size: 14px;
             }
         }
     </style>
@@ -557,6 +851,9 @@
     <div class="header">
         <div class="logo">GmOne 🧠</div>
         <div class="header-actions">
+            <button class="icon-btn theme-toggle" id="theme-toggle" aria-label="Переключить тему">
+                <span class="icon">🌙</span>
+            </button>
             <button class="icon-btn" id="tts-btn" aria-label="Включить/выключить озвучку">🔊</button>
             <button class="clear-btn" id="clear-btn" aria-label="Очистить чат">Очистить</button>
         </div>
@@ -573,7 +870,7 @@
                     <img src="logo.png" alt="GmOne Logo" onerror="this.style.display='none'; this.parentElement.textContent='🧠';">
                 </div>
                 <h2>GmOne</h2>
-                <p class="about-version">v1</p>
+                <p class="about-version">Векторная версия • v2.1</p>
                 
                 <div class="about-info">
                     <strong>Разработка:</strong> Tegcompany<br>
@@ -584,8 +881,10 @@
                     • Поддержка контекста и Википедии<br>
                     • Человеческий стиль общения<br>
                     • Голосовой ввод и озвучка<br>
-                    • Сохранение истории диалогов<br><br>
-                    <strong>StartSmart</strong> 🚀
+                    • Сохранение истории диалогов<br>
+                    • Темная/светлая тема<br>
+                    • Улучшенная мобильная адаптация<br><br>
+                    <strong>Start Smart</strong> 🚀
                 </div>
             </div>
         </div>
@@ -606,7 +905,49 @@
         </div>
     </div>
 
+    <div class="toast" id="toast"></div>
+
+    <div class="connection-status" id="connection-status"></div>
+
+    <div class="onboarding-overlay" id="onboarding">
+        <div class="onboarding-card">
+            <div class="onboarding-icon">👋</div>
+            <div class="onboarding-title">Добро пожаловать в GmOne!</div>
+            <div class="onboarding-text">
+                Я — твой умный помощник с векторной базой знаний. Задавай мне любые вопросы, и я найду ответ по смыслу!<br><br>
+                💡 <strong>Советы:</strong><br>
+                • Используй 🎤 для голосового ввода<br>
+                • 🔊 озвучивает мои ответы<br>
+                • 🌙 переключает тему
+            </div>
+            <button class="onboarding-btn" id="onboarding-close">Понятно, начнём!</button>
+        </div>
+    </div>
+
     <script>
+        // ====================== УТИЛИТЫ ======================
+        const Utils = {
+            showToast(message, type = 'success', duration = 3000) {
+                const toast = document.getElementById('toast');
+                toast.textContent = message;
+                toast.className = `toast ${type} show`;
+                
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                }, duration);
+            },
+
+            showConnectionStatus(online) {
+                const status = document.getElementById('connection-status');
+                status.textContent = online ? '✓ Онлайн' : '✗ Оффлайн';
+                status.className = `connection-status ${online ? 'online' : 'offline'} show`;
+                
+                setTimeout(() => {
+                    status.classList.remove('show');
+                }, 3000);
+            }
+        };
+
         // ====================== ОПТИМИЗИРОВАННАЯ ВЕКТОРНАЯ БАЗА ======================
         class VectorDB {
             constructor() {
@@ -778,6 +1119,11 @@
                 try {
                     const match = text.match(/(?:кто такой|кто такая|что такое|расскажи про)\s+(.+?)(?:\?|$)/i);
                     const q = match ? match[1].trim() : text;
+                    
+                    if (!navigator.onLine) {
+                        throw new Error('No internet connection');
+                    }
+                    
                     const res = await fetch(`https://ru.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(q)}`);
                     
                     if (!res.ok) {
@@ -788,6 +1134,9 @@
                     return data.extract ? `**${data.title}**\n\n${data.extract.substring(0, 450)}...` : "Не нашёл точной информации.";
                 } catch (error) {
                     console.error('Wikipedia error:', error);
+                    if (error.message === 'No internet connection') {
+                        return "Нет подключения к интернету. Проверь соединение и попробуй снова.";
+                    }
                     return "Не удалось подключиться к Википедии.";
                 }
             }
@@ -809,6 +1158,9 @@
                 this.renderHistory();
                 this.setupListeners();
                 this.updateTTSButton();
+                this.updateThemeButton();
+                this.checkOnboarding();
+                this.setupConnectionListener();
             },
 
             setupListeners() {
@@ -828,6 +1180,8 @@
                 document.getElementById('tts-btn').onclick = () => this.toggleTTS();
                 document.getElementById('mic-btn').onclick = () => this.startVoice();
                 document.getElementById('clear-btn').onclick = () => this.clearChat();
+                document.getElementById('theme-toggle').onclick = () => this.toggleTheme();
+                document.getElementById('onboarding-close').onclick = () => this.closeOnboarding();
             },
 
             async send() {
@@ -892,7 +1246,7 @@
                 this.chat.innerHTML = '';
                 if (GmOne.history.length === 0) {
                     setTimeout(() => {
-                        this.appendMessage("Привет! 👋 Я GmOne.\n\nСпрашивай что угодно — я найду ответ по смыслу!", "bot");
+                        this.appendMessage("Привет! 👋 Я GmOne с улучшенной векторной базой знаний.\n\nСпрашивай что угодно — я найду ответ по смыслу!", "bot");
                     }, 400);
                 } else {
                     GmOne.history.forEach(m => this.appendMessage(m.content, m.role));
@@ -910,7 +1264,6 @@
                 el.classList.add('active');
                 el.setAttribute('aria-selected', 'true');
                 
-                // Прокрутка наверх при переключении на about-screen
                 if (el.dataset.tab === 'about-screen') {
                     document.getElementById('about-screen').scrollTop = 0;
                 }
@@ -924,12 +1277,88 @@
                     console.warn('Failed to save TTS setting:', e);
                 }
                 this.updateTTSButton();
+                Utils.showToast(GmOne.ttsEnabled ? 'Озвучка включена 🔊' : 'Озвучка выключена 🔇', 'success');
             },
 
             updateTTSButton() {
                 const btn = document.getElementById('tts-btn');
                 btn.textContent = GmOne.ttsEnabled ? '🔊' : '🔇';
                 btn.setAttribute('aria-label', GmOne.ttsEnabled ? 'Выключить озвучку' : 'Включить озвучку');
+            },
+
+            toggleTheme() {
+                const html = document.documentElement;
+                const currentTheme = html.getAttribute('data-theme');
+                const toggleBtn = document.getElementById('theme-toggle');
+                
+                toggleBtn.classList.add('rotating');
+                setTimeout(() => {
+                    toggleBtn.classList.remove('rotating');
+                }, 500);
+                
+                let newTheme;
+                if (currentTheme === 'dark') {
+                    newTheme = 'light';
+                    toggleBtn.querySelector('.icon').textContent = '🌙';
+                } else if (currentTheme === 'light') {
+                    newTheme = 'dark';
+                    toggleBtn.querySelector('.icon').textContent = '☀️';
+                } else {
+                    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                    newTheme = prefersDark ? 'light' : 'dark';
+                    toggleBtn.querySelector('.icon').textContent = newTheme === 'dark' ? '☀️' : '🌙';
+                }
+                
+                html.setAttribute('data-theme', newTheme);
+                
+                try {
+                    localStorage.setItem('gmone_theme', newTheme);
+                } catch (e) {
+                    console.warn('Failed to save theme:', e);
+                }
+                
+                Utils.showToast(`Тема изменена на ${newTheme === 'dark' ? 'тёмную 🌙' : 'светлую ☀️'}`, 'success');
+            },
+
+            updateThemeButton() {
+                const savedTheme = localStorage.getItem('gmone_theme');
+                const toggleBtn = document.getElementById('theme-toggle');
+                
+                if (savedTheme) {
+                    document.documentElement.setAttribute('data-theme', savedTheme);
+                    toggleBtn.querySelector('.icon').textContent = savedTheme === 'dark' ? '☀️' : '🌙';
+                } else {
+                    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                    toggleBtn.querySelector('.icon').textContent = prefersDark ? '☀️' : '🌙';
+                }
+            },
+
+            checkOnboarding() {
+                const hasVisited = localStorage.getItem('gmone_visited');
+                if (!hasVisited) {
+                    document.getElementById('onboarding').classList.add('show');
+                }
+            },
+
+            closeOnboarding() {
+                document.getElementById('onboarding').classList.remove('show');
+                try {
+                    localStorage.setItem('gmone_visited', 'true');
+                } catch (e) {
+                    console.warn('Failed to save onboarding state:', e);
+                }
+            },
+
+            setupConnectionListener() {
+                window.addEventListener('online', () => {
+                    Utils.showConnectionStatus(true);
+                    Utils.showToast('Подключение восстановлено ✓', 'success');
+                });
+                
+                window.addEventListener('offline', () => {
+                    Utils.showConnectionStatus(false);
+                    Utils.showToast('Потеряно подключение к интернету', 'error');
+                });
             },
 
             speak(text) {
@@ -951,7 +1380,7 @@
             startVoice() {
                 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
                 if (!SR) {
-                    alert("Голосовой ввод не поддерживается в этом браузере");
+                    Utils.showToast("Голосовой ввод не поддерживается", 'error');
                     return;
                 }
 
@@ -968,13 +1397,15 @@
 
                 rec.onerror = e => {
                     console.error('Speech recognition error:', e);
-                    alert("Ошибка распознавания речи. Попробуй ещё раз.");
+                    Utils.showToast("Ошибка распознавания речи", 'error');
                 };
 
                 try {
                     rec.start();
+                    Utils.showToast("Говорите...", 'success', 2000);
                 } catch (e) {
                     console.error('Failed to start recognition:', e);
+                    Utils.showToast("Не удалось запустить распознавание", 'error');
                 }
             },
 
@@ -989,6 +1420,7 @@
                     this.chat.innerHTML = '';
                     setTimeout(() => {
                         this.appendMessage("Чат очищен! 🧹 Начнём сначала?", "bot");
+                        Utils.showToast("Чат очищен", 'success');
                     }, 300);
                 }
             }
@@ -1001,9 +1433,7 @@
                 Telegram.WebApp.expand();
                 
                 if (Telegram.WebApp.colorScheme === 'dark') {
-                    document.documentElement.style.setProperty('--bg', '#0a0a0a');
-                    document.documentElement.style.setProperty('--surface', 'rgba(18, 18, 18, 0.85)');
-                    document.documentElement.style.setProperty('--text', '#f8fafc');
+                    document.documentElement.setAttribute('data-theme', 'dark');
                 }
             }
             
