@@ -168,18 +168,6 @@
             transform: scale(0.9) rotate(-5deg);
         }
 
-        .theme-toggle {
-            position: relative;
-        }
-
-        .theme-toggle .icon {
-            transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-
-        .theme-toggle.rotating .icon {
-            transform: rotate(360deg);
-        }
-
         .clear-btn {
             background: none;
             border: none;
@@ -192,21 +180,6 @@
             transition: all 0.3s;
             position: relative;
             overflow: hidden;
-        }
-
-        .clear-btn::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(37, 99, 235, 0.1), transparent);
-            transition: left 0.5s;
-        }
-
-        .clear-btn:hover::before {
-            left: 100%;
         }
 
         .clear-btn:hover {
@@ -358,6 +331,52 @@
 
         .msg.user strong {
             color: #fff;
+        }
+
+        .typing-cursor {
+            display: inline-block;
+            width: 2px;
+            height: 1em;
+            background: var(--text);
+            margin-left: 2px;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+
+        .suggestions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .suggestion-btn {
+            background: var(--surface-solid);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 8px 14px;
+            border-radius: 12px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+
+        .suggestion-btn:hover {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+
+        .suggestion-btn:active {
+            transform: translateY(0) scale(0.95);
         }
 
         .input-area {
@@ -635,18 +654,6 @@
             font-weight: 700;
         }
 
-        .skeleton {
-            background: linear-gradient(90deg, var(--border) 25%, var(--surface) 50%, var(--border) 75%);
-            background-size: 200% 100%;
-            animation: loading 1.5s infinite;
-            border-radius: 8px;
-        }
-
-        @keyframes loading {
-            0% { background-position: 200% 0; }
-            100% { background-position: -200% 0; }
-        }
-
         .toast {
             position: fixed;
             top: 100px;
@@ -772,35 +779,6 @@
             transform: scale(0.95);
         }
 
-        .connection-status {
-            position: fixed;
-            top: 80px;
-            right: 16px;
-            padding: 8px 16px;
-            border-radius: 12px;
-            font-size: 13px;
-            font-weight: 600;
-            z-index: 150;
-            opacity: 0;
-            transform: translateX(100px);
-            transition: all 0.3s;
-        }
-
-        .connection-status.show {
-            opacity: 1;
-            transform: translateX(0);
-        }
-
-        .connection-status.offline {
-            background: var(--error);
-            color: white;
-        }
-
-        .connection-status.online {
-            background: var(--success);
-            color: white;
-        }
-
         @media (max-width: 480px) {
             .msg-wrap {
                 max-width: 90%;
@@ -843,13 +821,22 @@
             .onboarding-text {
                 font-size: 14px;
             }
+
+            .suggestions {
+                gap: 6px;
+            }
+
+            .suggestion-btn {
+                font-size: 12px;
+                padding: 6px 12px;
+            }
         }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <div class="logo">GmOne 🧠</div>
+        <div class="logo">GmOne</div>
         <div class="header-actions">
             <button class="icon-btn theme-toggle" id="theme-toggle" aria-label="Переключить тему">
                 <span class="icon">🌙</span>
@@ -870,21 +857,21 @@
                     <img src="logo.png" alt="GmOne Logo" onerror="this.style.display='none'; this.parentElement.textContent='🧠';">
                 </div>
                 <h2>GmOne</h2>
-                <p class="about-version">v2.0</p>
+                <p class="about-version">v2.1</p>
                 
                 <div class="about-info">
                     <strong>Разработка:</strong> Tegcompany<br>
                     <strong>Автор:</strong> Артём Юркевич<br><br>
-                    <strong>Особенности:</strong><br>
-                    • Встроенная векторная база знаний<br>
-                    • Поиск по смыслу (семантический анализ)<br>
-                    • Поддержка контекста и Википедии<br>
-                    • Человеческий стиль общения<br>
+                    <strong>Возможности:</strong><br>
+                    • Векторный поиск по смыслу<br>
+                    • Контекст диалога<br>
+                    • Распознавание намерений<br>
+                    • Математические вычисления<br>
+                    • Дата и время<br>
+                    • Команды: /help, /stats, /joke, /fact<br>
                     • Голосовой ввод и озвучка<br>
-                    • Сохранение истории диалогов<br>
-                    • Темная/светлая тема<br>
-                    • Улучшенная мобильная адаптация<br><br>
-                    <strong>Start Smart</strong> 🚀
+                    • Темная/светлая тема<br><br>
+                    <strong>StartSmart</strong> 🚀
                 </div>
             </div>
         </div>
@@ -907,18 +894,19 @@
 
     <div class="toast" id="toast"></div>
 
-    <div class="connection-status" id="connection-status"></div>
-
     <div class="onboarding-overlay" id="onboarding">
         <div class="onboarding-card">
-            <div class="onboarding-icon">👋</div>
-            <div class="onboarding-title">Добро пожаловать в GmOne!</div>
+            <div class="onboarding-icon">🤖</div>
+            <div class="onboarding-title">Привет! Я GmOne v3.0</div>
             <div class="onboarding-text">
-                Я — твой умный помощник с векторной базой знаний. Задавай мне любые вопросы, и я найду ответ по смыслу!<br><br>
-                💡 <strong>Советы:</strong><br>
-                • Используй 🎤 для голосового ввода<br>
-                • 🔊 озвучивает мои ответы<br>
-                • 🌙 переключает тему
+                Теперь я ещё умнее!<br><br>
+                💡 <strong>Что я умею:</strong><br>
+                • Помнить контекст разговора<br>
+                • Считать математику: "2+2*2"<br>
+                • Показывать дату и время<br>
+                • Команды: /help, /stats, /joke, /fact<br>
+                • Голосовой ввод 🎤<br>
+                • Озвучка ответов 🔊
             </div>
             <button class="onboarding-btn" id="onboarding-close">Понятно, начнём!</button>
         </div>
@@ -937,18 +925,32 @@
                 }, duration);
             },
 
-            showConnectionStatus(online) {
-                const status = document.getElementById('connection-status');
-                status.textContent = online ? '✓ Онлайн' : '✗ Оффлайн';
-                status.className = `connection-status ${online ? 'online' : 'offline'} show`;
-                
-                setTimeout(() => {
-                    status.classList.remove('show');
-                }, 3000);
+            randomChoice(arr) {
+                return arr[Math.floor(Math.random() * arr.length)];
+            },
+
+            formatDate(date) {
+                const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+                return date.toLocaleDateString('ru-RU', options);
+            },
+
+            formatTime(date) {
+                return date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+            },
+
+            evaluateMath(expr) {
+                try {
+                    const sanitized = expr.replace(/[^0-9+\-*/().]/g, '');
+                    if (!sanitized) return null;
+                    const result = Function('"use strict"; return (' + sanitized + ')')();
+                    return typeof result === 'number' && isFinite(result) ? result : null;
+                } catch {
+                    return null;
+                }
             }
         };
 
-        // ====================== ОПТИМИЗИРОВАННАЯ ВЕКТОРНАЯ БАЗА ======================
+        // ====================== УЛУЧШЕННАЯ ВЕКТОРНАЯ БАЗА ======================
         class VectorDB {
             constructor() {
                 this.knowledge = [];
@@ -964,14 +966,24 @@
             createVector(text) {
                 const words = text.toLowerCase().match(/\w+/g) || [];
                 const vector = {};
-                const stopwords = new Set(['и', 'в', 'на', 'с', 'по', 'для', 'что', 'как', 'это', 'то']);
-                const importantWords = new Set(['искусственный', 'интеллект', 'вектор', 'база', 'знаний', 'любовь', 'смысл', 'жизнь', 'помощник', 'поиск']);
+                const stopwords = new Set(['и', 'в', 'на', 'с', 'по', 'для', 'что', 'как', 'это', 'то', 'а', 'но', 'да']);
+                const importantWords = new Set(['искусственный', 'интеллект', 'вектор', 'база', 'знаний', 'любовь', 'смысл', 'жизнь', 'помощник', 'поиск', 'gmone', 'tegcompany']);
 
+                // Добавляем слова
                 words.forEach(word => {
                     if (word.length > 2 && !stopwords.has(word)) {
                         vector[word] = (vector[word] || 0) + (importantWords.has(word) ? 2.5 : 1);
                     }
                 });
+
+                // Добавляем биграммы для лучшего поиска
+                for (let i = 0; i < words.length - 1; i++) {
+                    const bigram = `${words[i]}_${words[i + 1]}`;
+                    if (!stopwords.has(words[i]) && !stopwords.has(words[i + 1])) {
+                        vector[bigram] = (vector[bigram] || 0) + 1.5;
+                    }
+                }
+
                 return vector;
             }
 
@@ -1011,12 +1023,106 @@
             }
         }
 
+        // ====================== РАСПОЗНАВАНИЕ НАМЕРЕНИЙ ======================
+        const IntentClassifier = {
+            intents: {
+                greeting: {
+                    patterns: ['привет', 'здравствуй', 'хай', 'hello', 'добрый день', 'доброе утро', 'добрый вечер'],
+                    responses: [
+                        "Привет! 👋 Рад тебя видеть!",
+                        "Здравствуй! Чем могу помочь?",
+                        "Привет! Как дела?",
+                        "Хей! Что нового?"
+                    ]
+                },
+                farewell: {
+                    patterns: ['пока', 'до свидания', 'прощай', 'bye', 'увидимся'],
+                    responses: [
+                        "До встречи! 👋 Возвращайся!",
+                        "Пока! Был рад пообщаться!",
+                        "До свидания! Хорошего дня!",
+                        "Увидимся! 😊"
+                    ]
+                },
+                thanks: {
+                    patterns: ['спасибо', 'благодарю', 'thanks', 'мерси'],
+                    responses: [
+                        "Всегда пожалуйста! 😊",
+                        "Рад помочь!",
+                        "Не за что!",
+                        "Обращайся ещё!"
+                    ]
+                },
+                how_are_you: {
+                    patterns: ['как дела', 'как ты', 'как поживаешь', 'что нового'],
+                    responses: [
+                        "Отлично! Постоянно учусь и становлюсь лучше 🚀",
+                        "Хорошо! А у тебя?",
+                        "Супер! Готов помогать!",
+                        "Замечательно! Спасибо, что спрашиваешь!"
+                    ]
+                },
+                name: {
+                    patterns: ['кто ты', 'как тебя зовут', 'твоё имя', 'ты кто'],
+                    responses: [
+                        "Я GmOne — умный помощник с векторной базой знаний 🧠",
+                        "Меня зовут GmOne! Я создан Tegcompany.",
+                        "Я GmOne v3.0 — твой умный ассистент!"
+                    ]
+                },
+                capabilities: {
+                    patterns: ['что ты умеешь', 'что можешь', 'твои возможности', 'помощь'],
+                    responses: [
+                        "Я умею многое! 🚀\n\n• Отвечать на вопросы по векторной базе\n• Искать в Википедии\n• Считать математику\n• Показывать дату и время\n• Рассказывать шутки и факты\n• Помнить контекст разговора\n\nПопробуй команды: /help, /stats, /joke, /fact"
+                    ]
+                }
+            },
+
+            classify(text) {
+                const lower = text.toLowerCase();
+                
+                for (const [intent, data] of Object.entries(this.intents)) {
+                    for (const pattern of data.patterns) {
+                        if (lower.includes(pattern)) {
+                            return { intent, confidence: 1.0 };
+                        }
+                    }
+                }
+                
+                return { intent: null, confidence: 0 };
+            }
+        };
+
         // ====================== ОСНОВНОЙ ДВИЖОК ======================
         const GmOne = {
             db: new VectorDB(),
             history: [],
+            contextWindow: [],
             ttsEnabled: true,
             isProcessing: false,
+            stats: {
+                messagesSent: 0,
+                startTime: Date.now()
+            },
+
+            jokes: [
+                "Почему программисты путают Хэллоуин и Рождество? Потому что Oct 31 = Dec 25 🎃",
+                "— Сколько программистов нужно, чтобы вкрутить лампочку?\n— Ни одного, это аппаратная проблема! 💡",
+                "Жена программиста отправляет его в магазин:\n— Купи батон хлеба. Если будут яйца — возьми десяток.\nПрограммист вернулся с 10 батонами хлеба 🍞",
+                "Два байта встретились. Один спрашивает:\n— Ты не болен?\n— Нет, просто бит не в ту сторону смотрит 🤒",
+                "Почему Java разработчики носят очки? Потому что не C# 👓"
+            ],
+
+            facts: [
+                "Осьминог имеет три сердца и голубую кровь 🐙",
+                "Мёд никогда не портится. Археологи находили мёд в египетских гробницах возрастом 3000 лет 🍯",
+                "Бананы на 50% совпадают по ДНК с людьми 🍌",
+                "Самое дликое слово в русском языке — 'превысокомногорассмотрительствующий' 📚",
+                "Сердце кита бьётся всего 8-10 раз в минуту 🐋",
+                "На Венере день длится дольше, чем год 🌍",
+                "Улитка может спать до 3 лет подряд 🐌",
+                "Мозг человека потребляет 20% всей энергии тела 🧠"
+            ],
 
             init() {
                 this.loadHistory();
@@ -1029,6 +1135,11 @@
                     const saved = localStorage.getItem('gmone_history');
                     if (saved) {
                         this.history = JSON.parse(saved);
+                        this.contextWindow = this.history.slice(-5);
+                    }
+                    const stats = localStorage.getItem('gmone_stats');
+                    if (stats) {
+                        this.stats = JSON.parse(stats);
                     }
                 } catch (e) {
                     console.warn('Failed to load history:', e);
@@ -1039,6 +1150,7 @@
             saveHistory() {
                 try {
                     localStorage.setItem('gmone_history', JSON.stringify(this.history.slice(-50)));
+                    localStorage.setItem('gmone_stats', JSON.stringify(this.stats));
                 } catch (e) {
                     console.warn('Failed to save history:', e);
                 }
@@ -1059,12 +1171,19 @@
                 const baseKnowledge = [
                     "Искусственный интеллект — это системы, способные выполнять задачи, требующие человеческого разума.",
                     "Векторная база данных позволяет искать информацию по смыслу, а не только по ключевым словам.",
-                    "GmOne — это личный помощник от Tegcompany, использующий векторный поиск.",
+                    "GmOne — это умный помощник от Tegcompany, использующий векторный поиск и контекст.",
                     "Любовь — это желание счастья другому человеку.",
                     "Смысл жизни каждый определяет сам. Часто он заключается в росте, любви и помощи другим.",
                     "Программирование учит думать логически и превращать идеи в реальность.",
                     "Минск — столица Беларуси, красивый и зелёный город.",
-                    "Tegcompany — компания, занимающаяся разработкой современных цифровых решений."
+                    "Tegcompany — компания, занимающаяся разработкой современных цифровых решений.",
+                    "Python — один из самых популярных языков программирования для ИИ и машинного обучения.",
+                    "JavaScript используется для создания интерактивных веб-приложений.",
+                    "HTML и CSS — основа веб-разработки, определяют структуру и стиль страниц.",
+                    "Нейронные сети вдохновлены работой человеческого мозга.",
+                    "Машинное обучение позволяет компьютерам учиться на данных.",
+                    "Алгоритм — это последовательность шагов для решения задачи.",
+                    "База данных — это организованное хранилище информации."
                 ];
                 baseKnowledge.forEach(text => this.db.add(text));
             },
@@ -1076,21 +1195,57 @@
 
                 this.isProcessing = true;
                 this.history.push({ role: "user", content: input });
+                this.stats.messagesSent++;
+                this.contextWindow.push({ role: "user", content: input });
+                if (this.contextWindow.length > 5) {
+                    this.contextWindow.shift();
+                }
 
                 try {
-                    const results = this.db.search(input, 3);
-                    const best = results[0];
-
                     let response;
-                    if (best && best.similarity > 0.18) {
-                        response = best.text + "\n\n_(найдено по смыслу в базе знаний)_";
-                    } else if (/(кто такой|кто такая|что такое|расскажи про|инфа о)/.test(input.toLowerCase())) {
-                        response = await this.fetchWikipedia(input);
-                    } else {
-                        response = this.generateSmartResponse(input);
+
+                    // Проверка команд
+                    if (input.startsWith('/')) {
+                        response = this.handleCommand(input);
+                    }
+                    // Проверка математики
+                    else if (/^[\d+\-*/().\s]+$/.test(input)) {
+                        response = this.handleMath(input);
+                    }
+                    // Проверка даты/времени
+                    else if (/(дата|время|час|который час|какой день|сегодня)/.test(input.toLowerCase())) {
+                        response = this.handleDateTime(input);
+                    }
+                    // Распознавание намерений
+                    else {
+                        const intent = IntentClassifier.classify(input);
+                        if (intent.confidence > 0) {
+                            response = Utils.randomChoice(IntentClassifier.intents[intent.intent].responses);
+                        }
+                        // Поиск в базе знаний
+                        else {
+                            const results = this.db.search(input, 3);
+                            const best = results[0];
+
+                            if (best && best.similarity > 0.18) {
+                                response = best.text;
+                            }
+                            // Википедия
+                            else if (/(кто такой|кто такая|что такое|расскажи про|инфа о)/.test(input.toLowerCase())) {
+                                response = await this.fetchWikipedia(input);
+                            }
+                            // Умный ответ с контекстом
+                            else {
+                                response = this.generateSmartResponse(input);
+                            }
+                        }
                     }
 
                     this.history.push({ role: "bot", content: response });
+                    this.contextWindow.push({ role: "bot", content: response });
+                    if (this.contextWindow.length > 10) {
+                        this.contextWindow.shift();
+                    }
                     this.saveHistory();
                     return response;
                 } catch (error) {
@@ -1101,18 +1256,74 @@
                 }
             },
 
-            generateSmartResponse(input) {
-                const lower = input.toLowerCase();
-                if (lower.includes("привет") || lower.includes("здравствуй")) 
-                    return "Привет! 👋 Я GmOne с векторным поиском. Чем могу помочь?";
-                if (lower.includes("как дела") || lower.includes("как ты")) 
-                    return "Спасибо, хорошо! Постоянно учусь и улучшаюсь благодаря нашим разговорам.";
-                if (lower.includes("спасибо") || lower.includes("благодарю"))
-                    return "Всегда пожалуйста! Рад помочь 😊";
-                if (lower.includes("пока") || lower.includes("до свидания"))
-                    return "До встречи! Возвращайся, если будут вопросы 👋";
+            handleCommand(cmd) {
+                const command = cmd.toLowerCase().split(' ')[0];
                 
-                return `Хороший вопрос: "${input}".\n\nЯ поискал в своей векторной базе, но давай разберём подробнее — что именно тебя интересует?`;
+                switch (command) {
+                    case '/help':
+                        return "📚 **Доступные команды:**\n\n• /help — показать помощь\n• /stats — статистика\n• /clear — очистить чат\n• /joke — случайная шутка\n• /fact — интересный факт\n• /time — текущее время\n• /date — текущая дата\n\nИли просто задавай вопросы!";
+                    
+                    case '/stats':
+                        const uptime = Math.floor((Date.now() - this.stats.startTime) / 1000);
+                        const hours = Math.floor(uptime / 3600);
+                        const minutes = Math.floor((uptime % 3600) / 60);
+                        return `📊 **Статистика:**\n\n• Сообщений отправлено: ${this.stats.messagesSent}\n• Время работы: ${hours}ч ${minutes}мин\n• Версия: 3.0`;
+                    
+                    case '/clear':
+                        setTimeout(() => GmOneUI.clearChat(), 100);
+                        return "🧹 Очищаю чат...";
+                    
+                    case '/joke':
+                        return Utils.randomChoice(this.jokes);
+                    
+                    case '/fact':
+                        return Utils.randomChoice(this.facts);
+                    
+                    case '/time':
+                        return `🕐 Сейчас **${Utils.formatTime(new Date())}**`;
+                    
+                    case '/date':
+                        return `📅 Сегодня **${Utils.formatDate(new Date())}**`;
+                    
+                    default:
+                        return "Неизвестная команда. Напиши /help для списка команд.";
+                }
+            },
+
+            handleMath(expr) {
+                const result = Utils.evaluateMath(expr);
+                if (result !== null) {
+                    return `🧮 **Результат:** ${expr} = **${result}**`;
+                }
+                return "Не могу вычислить это выражение. Проверь формат.";
+            },
+
+            handleDateTime(input) {
+                const lower = input.toLowerCase();
+                const now = new Date();
+                
+                if (/(время|час|который час)/.test(lower)) {
+                    return `🕐 Сейчас **${Utils.formatTime(now)}**`;
+                }
+                if (/(дата|какой день|сегодня)/.test(lower)) {
+                    return `📅 Сегодня **${Utils.formatDate(now)}**`;
+                }
+                return `📅 ${Utils.formatDate(now)}\n🕐 ${Utils.formatTime(now)}`;
+            },
+
+            generateSmartResponse(input) {
+                // Учитываем контекст
+                const contextInfo = this.contextWindow.length > 2 
+                    ? "\n\n_(учитывая наш разговор)_" 
+                    : "";
+                
+                const responses = [
+                    `Интересный вопрос! ${contextInfo}\n\nЯ поискал в своей базе знаний, но не нашёл точного ответа. Можешь уточнить, что именно тебя интересует?`,
+                    `Хм, дай подумать... ${contextInfo}\n\nПока не могу дать точный ответ, но давай разберёмся вместе — расскажи подробнее!`,
+                    `Хороший вопрос! ${contextInfo}\n\nВ моей базе нет точной информации, но я могу попробовать найти в Википедии. Попробуй спросить "что такое..." или "кто такой..."`
+                ];
+                
+                return Utils.randomChoice(responses);
             },
 
             async fetchWikipedia(text) {
@@ -1135,7 +1346,7 @@
                 } catch (error) {
                     console.error('Wikipedia error:', error);
                     if (error.message === 'No internet connection') {
-                        return "Нет подключения к интернету. Проверь соединение и попробуй снова.";
+                        return "Нет подключения к интернету. Проверь соединение.";
                     }
                     return "Не удалось подключиться к Википедии.";
                 }
@@ -1148,6 +1359,7 @@
             input: null,
             sendBtn: null,
             debounceTimer: null,
+            typingSpeed: 30,
 
             init() {
                 this.chat = document.getElementById('chat');
@@ -1160,7 +1372,6 @@
                 this.updateTTSButton();
                 this.updateThemeButton();
                 this.checkOnboarding();
-                this.setupConnectionListener();
             },
 
             setupListeners() {
@@ -1197,9 +1408,81 @@
                     const response = await GmOne.think(text);
                     thinking.remove();
 
-                    this.appendMessage(response, 'bot');
+                    await this.appendMessageWithTyping(response, 'bot');
+                    this.addSuggestions(response);
                     this.speak(response);
                 }, 100);
+            },
+
+            async appendMessageWithTyping(text, role) {
+                const wrap = document.createElement('div');
+                wrap.className = `msg-wrap ${role}`;
+                const isBot = role === 'bot';
+                
+                const avatar = isBot 
+                    ? `<div class="avatar"><img src="logo.png" alt="GmOne" onerror="this.style.display='none'; this.parentElement.textContent='🧠';" loading="lazy"></div>`
+                    : `<div class="avatar" style="background: linear-gradient(135deg, #64748b 0%, #475569 100%);">👤</div>`;
+                
+                wrap.innerHTML = `${avatar}<div class="msg ${role}"><span class="msg-content"></span><span class="typing-cursor"></span></div>`;
+                this.chat.appendChild(wrap);
+                
+                const contentEl = wrap.querySelector('.msg-content');
+                const cursorEl = wrap.querySelector('.typing-cursor');
+                
+                // Typing animation
+                const words = text.split(' ');
+                let currentText = '';
+                
+                for (let i = 0; i < words.length; i++) {
+                    currentText += (i > 0 ? ' ' : '') + words[i];
+                    contentEl.innerHTML = marked.parse(currentText);
+                    
+                    requestAnimationFrame(() => {
+                        this.chat.scrollTo({ top: this.chat.scrollHeight, behavior: 'smooth' });
+                    });
+                    
+                    await new Promise(resolve => setTimeout(resolve, this.typingSpeed));
+                }
+                
+                cursorEl.remove();
+            },
+
+            addSuggestions(response) {
+                const suggestions = [];
+                
+                if (response.includes('команды') || response.includes('/help')) {
+                    suggestions.push('/joke', '/fact', '/stats');
+                } else if (response.includes('математик') || response.includes('вычисл')) {
+                    suggestions.push('2+2', '100*5', '1000/8');
+                } else {
+                    const randomSuggestions = [
+                        'Расскажи шутку',
+                        'Интересный факт',
+                        'Что ты умеешь?',
+                        'Который час?'
+                    ];
+                    suggestions.push(...randomSuggestions.slice(0, 3));
+                }
+                
+                if (suggestions.length > 0) {
+                    const suggestionsDiv = document.createElement('div');
+                    suggestionsDiv.className = 'suggestions';
+                    suggestions.forEach(text => {
+                        const btn = document.createElement('button');
+                        btn.className = 'suggestion-btn';
+                        btn.textContent = text;
+                        btn.onclick = () => {
+                            this.input.value = text;
+                            this.send();
+                        };
+                        suggestionsDiv.appendChild(btn);
+                    });
+                    
+                    const lastMsg = this.chat.lastElementChild;
+                    if (lastMsg) {
+                        lastMsg.querySelector('.msg').appendChild(suggestionsDiv);
+                    }
+                }
             },
 
             appendMessage(text, role) {
@@ -1245,8 +1528,9 @@
             renderHistory() {
                 this.chat.innerHTML = '';
                 if (GmOne.history.length === 0) {
-                    setTimeout(() => {
-                        this.appendMessage("Привет! 👋 Я GmOne с улучшенной векторной базой знаний.\n\nСпрашивай что угодно — я найду ответ по смыслу!", "bot");
+                    setTimeout(async () => {
+                        await this.appendMessageWithTyping("Привет! 👋 Я GmOne v3.0 — стал ещё умнее!\n\nТеперь я:\n• Помню контекст разговора\n• Считаю математику\n• Знаю команды: /help, /joke, /fact\n• Понимаю намерения\n\nПопробуй написать /help для списка команд!", "bot");
+                        this.addSuggestions("команды");
                     }, 400);
                 } else {
                     GmOne.history.forEach(m => this.appendMessage(m.content, m.role));
@@ -1291,11 +1575,6 @@
                 const currentTheme = html.getAttribute('data-theme');
                 const toggleBtn = document.getElementById('theme-toggle');
                 
-                toggleBtn.classList.add('rotating');
-                setTimeout(() => {
-                    toggleBtn.classList.remove('rotating');
-                }, 500);
-                
                 let newTheme;
                 if (currentTheme === 'dark') {
                     newTheme = 'light';
@@ -1317,7 +1596,7 @@
                     console.warn('Failed to save theme:', e);
                 }
                 
-                Utils.showToast(`Тема изменена на ${newTheme === 'dark' ? 'тёмную 🌙' : 'светлую ☀️'}`, 'success');
+                Utils.showToast(`Тема: ${newTheme === 'dark' ? 'тёмная 🌙' : 'светлая ☀️'}`, 'success');
             },
 
             updateThemeButton() {
@@ -1334,7 +1613,7 @@
             },
 
             checkOnboarding() {
-                const hasVisited = localStorage.getItem('gmone_visited');
+                const hasVisited = localStorage.getItem('gmone_visited_v3');
                 if (!hasVisited) {
                     document.getElementById('onboarding').classList.add('show');
                 }
@@ -1343,22 +1622,10 @@
             closeOnboarding() {
                 document.getElementById('onboarding').classList.remove('show');
                 try {
-                    localStorage.setItem('gmone_visited', 'true');
+                    localStorage.setItem('gmone_visited_v3', 'true');
                 } catch (e) {
                     console.warn('Failed to save onboarding state:', e);
                 }
-            },
-
-            setupConnectionListener() {
-                window.addEventListener('online', () => {
-                    Utils.showConnectionStatus(true);
-                    Utils.showToast('Подключение восстановлено ✓', 'success');
-                });
-                
-                window.addEventListener('offline', () => {
-                    Utils.showConnectionStatus(false);
-                    Utils.showToast('Потеряно подключение к интернету', 'error');
-                });
             },
 
             speak(text) {
@@ -1366,7 +1633,7 @@
                 
                 try {
                     window.speechSynthesis.cancel();
-                    const cleanText = text.replace(/\*\*.*?\*\*/g, '').replace(/_.*?_/g, '');
+                    const cleanText = text.replace(/\*\*.*?\*\*/g, '').replace(/_.*?_/g, '').replace(/[^\w\sа-яА-Я.,!?-]/g, '');
                     const u = new SpeechSynthesisUtterance(cleanText);
                     u.lang = 'ru-RU';
                     u.rate = 1.0;
@@ -1412,14 +1679,15 @@
             clearChat() {
                 if (confirm("Очистить весь чат? Это действие нельзя отменить.")) {
                     GmOne.history = [];
+                    GmOne.contextWindow = [];
                     try {
                         localStorage.removeItem('gmone_history');
                     } catch (e) {
                         console.warn('Failed to clear history:', e);
                     }
                     this.chat.innerHTML = '';
-                    setTimeout(() => {
-                        this.appendMessage("Чат очищен! 🧹 Начнём сначала?", "bot");
+                    setTimeout(async () => {
+                        await this.appendMessageWithTyping("Чат очищен! 🧹 Начнём сначала?", "bot");
                         Utils.showToast("Чат очищен", 'success');
                     }, 300);
                 }
