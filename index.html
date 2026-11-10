@@ -333,6 +333,35 @@
             color: #fff;
         }
 
+        .msg-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .msg-wrap:hover .msg-actions {
+            opacity: 1;
+        }
+
+        .msg-action-btn {
+            background: var(--surface-solid);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            padding: 4px 8px;
+            border-radius: 8px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .msg-action-btn:hover {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+
         .typing-cursor {
             display: inline-block;
             width: 2px;
@@ -857,21 +886,20 @@
                     <img src="logo.png" alt="GmOne Logo" onerror="this.style.display='none'; this.parentElement.textContent='🧠';">
                 </div>
                 <h2>GmOne</h2>
-                <p class="about-version">v2.1</p>
+                <p class="about-version">v3.1</p>
                 
                 <div class="about-info">
                     <strong>Разработка:</strong> Tegcompany<br>
                     <strong>Автор:</strong> Артём Юркевич<br><br>
                     <strong>Возможности:</strong><br>
-                    • Векторный поиск по смыслу<br>
+                    • Стемминг русского языка<br>
+                    • TF-IDF поиск<br>
+                    • Самообучение и память<br>
                     • Контекст диалога<br>
-                    • Распознавание намерений<br>
-                    • Математические вычисления<br>
-                    • Дата и время<br>
-                    • Команды: /help, /stats, /joke, /fact<br>
-                    • Голосовой ввод и озвучка<br>
-                    • Темная/светлая тема<br><br>
-                    <strong>StartSmart</strong> 🚀
+                    • Математика и команды<br>
+                    • Голосовой ввод/озвучка<br>
+                    • 100% автономный ИИ<br><br>
+                    <strong>Start Smart</strong> 🚀
                 </div>
             </div>
         </div>
@@ -897,22 +925,83 @@
     <div class="onboarding-overlay" id="onboarding">
         <div class="onboarding-card">
             <div class="onboarding-icon">🤖</div>
-            <div class="onboarding-title">Привет! Я GmOne v3.0</div>
+            <div class="onboarding-title">Привет! Я GmOne v3.1</div>
             <div class="onboarding-text">
-                Теперь я ещё умнее!<br><br>
-                💡 <strong>Что я умею:</strong><br>
-                • Помнить контекст разговора<br>
-                • Считать математику: "2+2*2"<br>
-                • Показывать дату и время<br>
-                • Команды: /help, /stats, /joke, /fact<br>
-                • Голосовой ввод 🎤<br>
-                • Озвучка ответов 🔊
+                Теперь я настоящий автономный ИИ!<br><br>
+                💡 <strong>Что нового:</strong><br>
+                • Понимаю русский в любой форме<br>
+                • Запоминаю факты о тебе<br>
+                • Учусь на наших разговорах<br>
+                • 100% работаю локально<br><br>
+                Попробуй сказать: "Меня зовут Артём"
             </div>
             <button class="onboarding-btn" id="onboarding-close">Понятно, начнём!</button>
         </div>
     </div>
 
     <script>
+        // ====================== СТЕММЕР ПОРТЕРА ДЛЯ РУССКОГО ======================
+        const RussianStemmer = {
+            PERFECTIVE_GROUND: ['ив', 'ивши', 'ившись', 'ыв', 'ывши', 'ывшись'],
+            REFLEXIVE: ['ся', 'сь'],
+            ADJECTIVAL: ['ее', 'ие', 'ые', 'ое', 'ими', 'ыми', 'ей', 'ий', 'ый', 'ой', 'ем', 'им', 'ым', 'ом', 'его', 'ого', 'ему', 'ому', 'их', 'ых', 'ую', 'юю', 'ая', 'яя', 'ою', 'ею'],
+            PARTICIPLE: ['ем', 'нн', 'вш', 'ющ', 'щ'],
+            VERB: ['ла', 'на', 'ете', 'йте', 'ли', 'й', 'л', 'ем', 'н', 'ло', 'но', 'ет', 'ют', 'ны', 'ть', 'ешь', 'нно'],
+            NOUN: ['а', 'ев', 'ов', 'ие', 'ье', 'е', 'иями', 'ями', 'ами', 'еи', 'ии', 'и', 'ию', 'ью', 'й', 'иям', 'ям', 'ием', 'ем', 'ам', 'ом', 'о', 'у', 'ах', 'иях', 'ях', 'ы', 'ь', 'ию', 'ью'],
+            SUPERLATIVE: ['ейше', 'ейш'],
+            DERIVATIONAL: ['ост'],
+            T: ['ь'],
+
+            stem(word) {
+                word = word.toLowerCase();
+                
+                // Заменяем ё на е
+                word = word.replace(/ё/g, 'е');
+                
+                let perf, refl, adj, part, verb, noun, deriv;
+                
+                // Step 1: Perfective gerund
+                perf = this.findAndRemove(word, this.PERFECTIVE_GROUND);
+                
+                // Step 2: Reflexive
+                refl = perf ? this.findAndRemove(word, this.REFLEXIVE) : false;
+                
+                // Step 3: Adjectival
+                adj = this.findAndRemove(word, this.ADJECTIVAL);
+                if (adj) {
+                    part = this.findAndRemove(word, this.PARTICIPLE);
+                }
+                
+                // Step 4: Verb
+                if (!adj && !part) {
+                    verb = this.findAndRemove(word, this.VERB);
+                    if (!verb) {
+                        noun = this.findAndRemove(word, this.NOUN);
+                    }
+                }
+                
+                // Step 5: Superlative
+                this.findAndRemove(word, this.SUPERLATIVE);
+                
+                // Step 6: Derivational
+                deriv = this.findAndRemove(word, this.DERIVATIONAL);
+                
+                // Step 7: Remove trailing 'ь'
+                this.findAndRemove(word, this.T);
+                
+                return word;
+            },
+
+            findAndRemove(word, endings) {
+                for (let ending of endings) {
+                    if (word.endsWith(ending) && word.length > ending.length + 2) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+        };
+
         // ====================== УТИЛИТЫ ======================
         const Utils = {
             showToast(message, type = 'success', duration = 3000) {
@@ -950,36 +1039,45 @@
             }
         };
 
-        // ====================== УЛУЧШЕННАЯ ВЕКТОРНАЯ БАЗА ======================
+        // ====================== УЛУЧШЕННАЯ ВЕКТОРНАЯ БАЗА С TF-IDF ======================
         class VectorDB {
             constructor() {
                 this.knowledge = [];
                 this.cache = new Map();
+                this.idf = {};
+                this.documentCount = 0;
             }
 
             add(text, metadata = {}) {
                 const vector = this.createVector(text);
-                this.knowledge.push({ text, vector, metadata });
+                this.knowledge.push({ text, vector, metadata, weight: 1.0 });
+                this.documentCount++;
+                this.updateIDF();
                 this.cache.clear();
             }
 
-            createVector(text) {
-                const words = text.toLowerCase().match(/\w+/g) || [];
-                const vector = {};
-                const stopwords = new Set(['и', 'в', 'на', 'с', 'по', 'для', 'что', 'как', 'это', 'то', 'а', 'но', 'да']);
-                const importantWords = new Set(['искусственный', 'интеллект', 'вектор', 'база', 'знаний', 'любовь', 'смысл', 'жизнь', 'помощник', 'поиск', 'gmone', 'tegcompany']);
+            updateWeight(index, delta) {
+                if (this.knowledge[index]) {
+                    this.knowledge[index].weight = Math.max(0.1, Math.min(5.0, this.knowledge[index].weight + delta));
+                }
+            }
 
-                // Добавляем слова
-                words.forEach(word => {
+            createVector(text) {
+                const words = text.toLowerCase().match(/[а-яёa-z]+/g) || [];
+                const stemmedWords = words.map(w => RussianStemmer.stem(w));
+                const vector = {};
+                const stopwords = new Set(['и', 'в', 'на', 'с', 'по', 'для', 'что', 'как', 'это', 'то', 'а', 'но', 'да', 'не', 'я', 'ты', 'он', 'она', 'они', 'мы', 'вы']);
+
+                stemmedWords.forEach((word, idx) => {
                     if (word.length > 2 && !stopwords.has(word)) {
-                        vector[word] = (vector[word] || 0) + (importantWords.has(word) ? 2.5 : 1);
+                        vector[word] = (vector[word] || 0) + 1;
                     }
                 });
 
-                // Добавляем биграммы для лучшего поиска
-                for (let i = 0; i < words.length - 1; i++) {
-                    const bigram = `${words[i]}_${words[i + 1]}`;
-                    if (!stopwords.has(words[i]) && !stopwords.has(words[i + 1])) {
+                // Биграммы
+                for (let i = 0; i < stemmedWords.length - 1; i++) {
+                    const bigram = `${stemmedWords[i]}_${stemmedWords[i + 1]}`;
+                    if (!stopwords.has(stemmedWords[i]) && !stopwords.has(stemmedWords[i + 1])) {
                         vector[bigram] = (vector[bigram] || 0) + 1.5;
                     }
                 }
@@ -987,13 +1085,29 @@
                 return vector;
             }
 
+            updateIDF() {
+                const docFreq = {};
+                this.knowledge.forEach(doc => {
+                    const words = new Set(Object.keys(doc.vector));
+                    words.forEach(word => {
+                        docFreq[word] = (docFreq[word] || 0) + 1;
+                    });
+                });
+
+                this.idf = {};
+                for (let word in docFreq) {
+                    this.idf[word] = Math.log((this.documentCount + 1) / (docFreq[word] + 1)) + 1;
+                }
+            }
+
             cosineSimilarity(vec1, vec2) {
                 let dot = 0, norm1 = 0, norm2 = 0;
                 const keys = new Set([...Object.keys(vec1), ...Object.keys(vec2)]);
                 
                 for (let key of keys) {
-                    const v1 = vec1[key] || 0;
-                    const v2 = vec2[key] || 0;
+                    const idf = this.idf[key] || 1.0;
+                    const v1 = (vec1[key] || 0) * idf;
+                    const v2 = (vec2[key] || 0) * idf;
                     dot += v1 * v2;
                     norm1 += v1 * v1;
                     norm2 += v2 * v2;
@@ -1011,9 +1125,10 @@
 
                 const qVector = this.createVector(query);
                 const results = this.knowledge
-                    .map(item => ({
+                    .map((item, idx) => ({
                         ...item,
-                        similarity: this.cosineSimilarity(qVector, item.vector)
+                        index: idx,
+                        similarity: this.cosineSimilarity(qVector, item.vector) * item.weight
                     }))
                     .sort((a, b) => b.similarity - a.similarity)
                     .slice(0, topK);
@@ -1065,15 +1180,15 @@
                 name: {
                     patterns: ['кто ты', 'как тебя зовут', 'твоё имя', 'ты кто'],
                     responses: [
-                        "Я GmOne — умный помощник с векторной базой знаний 🧠",
+                        "Я GmOne — автономный ИИ с самообучением 🧠",
                         "Меня зовут GmOne! Я создан Tegcompany.",
-                        "Я GmOne v3.0 — твой умный ассистент!"
+                        "Я GmOne v3.1 — твой умный ассистент!"
                     ]
                 },
                 capabilities: {
                     patterns: ['что ты умеешь', 'что можешь', 'твои возможности', 'помощь'],
                     responses: [
-                        "Я умею многое! 🚀\n\n• Отвечать на вопросы по векторной базе\n• Искать в Википедии\n• Считать математику\n• Показывать дату и время\n• Рассказывать шутки и факты\n• Помнить контекст разговора\n\nПопробуй команды: /help, /stats, /joke, /fact"
+                        "Я умею многое! 🚀\n\n• Понимать русский в любой форме\n• Запоминать факты о тебе\n• Считать математику\n• Показывать дату и время\n• Рассказывать шутки и факты\n• 100% работаю локально\n\nПопробуй команды: /help, /stats, /joke, /fact"
                     ]
                 }
             },
@@ -1093,6 +1208,32 @@
             }
         };
 
+        // ====================== ИЗВЛЕЧЕНИЕ ФАКТОВ ======================
+        const FactExtractor = {
+            patterns: [
+                { regex: /меня зовут\s+([а-яё]+)/i, type: 'name' },
+                { regex: /моё? имя\s+([а-яё]+)/i, type: 'name' },
+                { regex: /я из\s+([а-яё]+)/i, type: 'city' },
+                { regex: /я живу в\s+([а-яё]+)/i, type: 'city' },
+                { regex: /мне\s+(\d+)\s+лет/i, type: 'age' },
+                { regex: /мой любимый\s+(.+)/i, type: 'favorite' },
+                { regex: /я люблю\s+(.+)/i, type: 'likes' },
+                { regex: /я не люблю\s+(.+)/i, type: 'dislikes' },
+                { regex: /я работаю\s+(.+)/i, type: 'job' },
+                { regex: /я учусь\s+(.+)/i, type: 'education' }
+            ],
+
+            extract(text) {
+                for (let pattern of this.patterns) {
+                    const match = text.match(pattern.regex);
+                    if (match) {
+                        return { type: pattern.type, value: match[1].trim() };
+                    }
+                }
+                return null;
+            }
+        };
+
         // ====================== ОСНОВНОЙ ДВИЖОК ======================
         const GmOne = {
             db: new VectorDB(),
@@ -1100,6 +1241,7 @@
             contextWindow: [],
             ttsEnabled: true,
             isProcessing: false,
+            userProfile: {},
             stats: {
                 messagesSent: 0,
                 startTime: Date.now()
@@ -1127,6 +1269,7 @@
             init() {
                 this.loadHistory();
                 this.loadSettings();
+                this.loadUserProfile();
                 this.initKnowledge();
             },
 
@@ -1167,11 +1310,30 @@
                 }
             },
 
+            loadUserProfile() {
+                try {
+                    const profile = localStorage.getItem('gmone_user_profile');
+                    if (profile) {
+                        this.userProfile = JSON.parse(profile);
+                    }
+                } catch (e) {
+                    console.warn('Failed to load user profile:', e);
+                }
+            },
+
+            saveUserProfile() {
+                try {
+                    localStorage.setItem('gmone_user_profile', JSON.stringify(this.userProfile));
+                } catch (e) {
+                    console.warn('Failed to save user profile:', e);
+                }
+            },
+
             initKnowledge() {
                 const baseKnowledge = [
                     "Искусственный интеллект — это системы, способные выполнять задачи, требующие человеческого разума.",
                     "Векторная база данных позволяет искать информацию по смыслу, а не только по ключевым словам.",
-                    "GmOne — это умный помощник от Tegcompany, использующий векторный поиск и контекст.",
+                    "GmOne — это автономный ИИ от Tegcompany с самообучением и памятью.",
                     "Любовь — это желание счастья другому человеку.",
                     "Смысл жизни каждый определяет сам. Часто он заключается в росте, любви и помощи другим.",
                     "Программирование учит думать логически и превращать идеи в реальность.",
@@ -1208,35 +1370,48 @@
                     if (input.startsWith('/')) {
                         response = this.handleCommand(input);
                     }
-                    // Проверка математики
-                    else if (/^[\d+\-*/().\s]+$/.test(input)) {
-                        response = this.handleMath(input);
-                    }
-                    // Проверка даты/времени
-                    else if (/(дата|время|час|который час|какой день|сегодня)/.test(input.toLowerCase())) {
-                        response = this.handleDateTime(input);
-                    }
-                    // Распознавание намерений
+                    // Извлечение фактов о пользователе
                     else {
-                        const intent = IntentClassifier.classify(input);
-                        if (intent.confidence > 0) {
-                            response = Utils.randomChoice(IntentClassifier.intents[intent.intent].responses);
+                        const fact = FactExtractor.extract(input);
+                        if (fact) {
+                            response = this.handleFactExtraction(fact);
                         }
-                        // Поиск в базе знаний
+                        // Проверка математики
+                        else if (/^[\d+\-*/().\s]+$/.test(input)) {
+                            response = this.handleMath(input);
+                        }
+                        // Проверка даты/времени
+                        else if (/(дата|время|час|который час|какой день|сегодня)/.test(input.toLowerCase())) {
+                            response = this.handleDateTime(input);
+                        }
+                        // Распознавание намерений
                         else {
-                            const results = this.db.search(input, 3);
-                            const best = results[0];
-
-                            if (best && best.similarity > 0.18) {
-                                response = best.text;
+                            const intent = IntentClassifier.classify(input);
+                            if (intent.confidence > 0) {
+                                response = Utils.randomChoice(IntentClassifier.intents[intent.intent].responses);
                             }
-                            // Википедия
-                            else if (/(кто такой|кто такая|что такое|расскажи про|инфа о)/.test(input.toLowerCase())) {
-                                response = await this.fetchWikipedia(input);
-                            }
-                            // Умный ответ с контекстом
+                            // Поиск в базе знаний
                             else {
-                                response = this.generateSmartResponse(input);
+                                const results = this.db.search(input, 3);
+                                const best = results[0];
+
+                                if (best && best.similarity > 0.15) {
+                                    response = best.text;
+                                    // Самообучение: увеличиваем вес успешного ответа
+                                    this.db.updateWeight(best.index, 0.05);
+                                }
+                                // Википедия
+                                else if (/(кто такой|кто такая|что такое|расскажи про|инфа о)/.test(input.toLowerCase())) {
+                                    response = await this.fetchWikipedia(input);
+                                }
+                                // Умный ответ с контекстом
+                                else {
+                                    response = this.generateSmartResponse(input);
+                                    // Самообучение: уменьшаем вес неудачного ответа
+                                    if (best) {
+                                        this.db.updateWeight(best.index, -0.02);
+                                    }
+                                }
                             }
                         }
                     }
@@ -1256,18 +1431,36 @@
                 }
             },
 
+            handleFactExtraction(fact) {
+                this.userProfile[fact.type] = fact.value;
+                this.saveUserProfile();
+
+                const responses = {
+                    name: `Приятно познакомиться, ${fact.value}! Я запомню твоё имя 😊`,
+                    city: `Отлично! Ты живёшь в ${fact.value}. Запомнил!`,
+                    age: `Понял, тебе ${fact.value} лет. Записал!`,
+                    favorite: `Круто! ${fact.value} — твой любимый. Запомню!`,
+                    likes: `Понял, тебе нравится ${fact.value}. Записал!`,
+                    dislikes: `Запомню, что тебе не нравится ${fact.value}.`,
+                    job: `Интересно! Ты работаешь ${fact.value}. Записал!`,
+                    education: `Отлично! Ты учишься ${fact.value}. Запомнил!`
+                };
+
+                return responses[fact.type] || "Запомнил!";
+            },
+
             handleCommand(cmd) {
                 const command = cmd.toLowerCase().split(' ')[0];
                 
                 switch (command) {
                     case '/help':
-                        return "📚 **Доступные команды:**\n\n• /help — показать помощь\n• /stats — статистика\n• /clear — очистить чат\n• /joke — случайная шутка\n• /fact — интересный факт\n• /time — текущее время\n• /date — текущая дата\n\nИли просто задавай вопросы!";
+                        return "📚 **Доступные команды:**\n\n• /help — показать помощь\n• /stats — статистика\n• /clear — очистить чат\n• /joke — случайная шутка\n• /fact — интересный факт\n• /time — текущее время\n• /date — текущая дата\n• /profile — твой профиль\n\nИли просто говори со мной!";
                     
                     case '/stats':
                         const uptime = Math.floor((Date.now() - this.stats.startTime) / 1000);
                         const hours = Math.floor(uptime / 3600);
                         const minutes = Math.floor((uptime % 3600) / 60);
-                        return `📊 **Статистика:**\n\n• Сообщений отправлено: ${this.stats.messagesSent}\n• Время работы: ${hours}ч ${minutes}мин\n• Версия: 3.0`;
+                        return `📊 **Статистика:**\n\n• Сообщений: ${this.stats.messagesSent}\n• Время работы: ${hours}ч ${minutes}мин\n• Версия: 4.0\n• Знаний в базе: ${this.db.knowledge.length}`;
                     
                     case '/clear':
                         setTimeout(() => GmOneUI.clearChat(), 100);
@@ -1284,6 +1477,16 @@
                     
                     case '/date':
                         return `📅 Сегодня **${Utils.formatDate(new Date())}**`;
+
+                    case '/profile':
+                        if (Object.keys(this.userProfile).length === 0) {
+                            return "👤 Профиль пуст. Расскажи мне о себе!\n\nНапример:\n• Меня зовут Артём\n• Я из Минска\n• Мне 25 лет\n• Я люблю программирование";
+                        }
+                        let profileText = "👤 **Твой профиль:**\n\n";
+                        for (let [key, value] of Object.entries(this.userProfile)) {
+                            profileText += `• ${key}: ${value}\n`;
+                        }
+                        return profileText;
                     
                     default:
                         return "Неизвестная команда. Напиши /help для списка команд.";
@@ -1312,15 +1515,12 @@
             },
 
             generateSmartResponse(input) {
-                // Учитываем контекст
-                const contextInfo = this.contextWindow.length > 2 
-                    ? "\n\n_(учитывая наш разговор)_" 
-                    : "";
+                const userName = this.userProfile.name ? `, ${this.userProfile.name}` : '';
                 
                 const responses = [
-                    `Интересный вопрос! ${contextInfo}\n\nЯ поискал в своей базе знаний, но не нашёл точного ответа. Можешь уточнить, что именно тебя интересует?`,
-                    `Хм, дай подумать... ${contextInfo}\n\nПока не могу дать точный ответ, но давай разберёмся вместе — расскажи подробнее!`,
-                    `Хороший вопрос! ${contextInfo}\n\nВ моей базе нет точной информации, но я могу попробовать найти в Википедии. Попробуй спросить "что такое..." или "кто такой..."`
+                    `Интересный вопрос${userName}! Я поискал в своей базе знаний, но не нашёл точного ответа. Можешь уточнить?`,
+                    `Хм, дай подумать... Пока не могу дать точный ответ, но давай разберёмся вместе!`,
+                    `Хороший вопрос! В моей базе нет точной информации. Попробуй спросить "что такое..." или "кто такой..."`
                 ];
                 
                 return Utils.randomChoice(responses);
@@ -1429,7 +1629,6 @@
                 const contentEl = wrap.querySelector('.msg-content');
                 const cursorEl = wrap.querySelector('.typing-cursor');
                 
-                // Typing animation
                 const words = text.split(' ');
                 let currentText = '';
                 
@@ -1451,7 +1650,7 @@
                 const suggestions = [];
                 
                 if (response.includes('команды') || response.includes('/help')) {
-                    suggestions.push('/joke', '/fact', '/stats');
+                    suggestions.push('/joke', '/fact', '/stats', '/profile');
                 } else if (response.includes('математик') || response.includes('вычисл')) {
                     suggestions.push('2+2', '100*5', '1000/8');
                 } else {
@@ -1529,7 +1728,7 @@
                 this.chat.innerHTML = '';
                 if (GmOne.history.length === 0) {
                     setTimeout(async () => {
-                        await this.appendMessageWithTyping("Привет! 👋 Я GmOne v3.0 — стал ещё умнее!\n\nТеперь я:\n• Помню контекст разговора\n• Считаю математику\n• Знаю команды: /help, /joke, /fact\n• Понимаю намерения\n\nПопробуй написать /help для списка команд!", "bot");
+                        await this.appendMessageWithTyping("Привет! 👋 Я GmOne v3.1 — автономный ИИ с самообучением!\n\nЯ теперь:\n• Понимаю русский в любой форме\n• Запоминаю факты о тебе\n• Учусь на наших разговорах\n\nПопробуй сказать: \"Меня зовут Артём\"", "bot");
                         this.addSuggestions("команды");
                     }, 400);
                 } else {
@@ -1613,7 +1812,7 @@
             },
 
             checkOnboarding() {
-                const hasVisited = localStorage.getItem('gmone_visited_v3');
+                const hasVisited = localStorage.getItem('gmone_visited_v4');
                 if (!hasVisited) {
                     document.getElementById('onboarding').classList.add('show');
                 }
@@ -1622,7 +1821,7 @@
             closeOnboarding() {
                 document.getElementById('onboarding').classList.remove('show');
                 try {
-                    localStorage.setItem('gmone_visited_v3', 'true');
+                    localStorage.setItem('gmone_visited_v4', 'true');
                 } catch (e) {
                     console.warn('Failed to save onboarding state:', e);
                 }
